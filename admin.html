@@ -12,6 +12,11 @@
   </header>
 
   <section id="admin-controls">
+    <!-- Logo Upload -->
+    <h2>Upload Store Logo</h2>
+    <input type="file" id="admin-logo" accept="image/*">
+    <button onclick="updateLogo()">Update Logo</button>
+
     <!-- Update Store Name -->
     <h2>Update Store Name</h2>
     <input type="text" id="admin-store-name" placeholder="New Store Name">
@@ -27,11 +32,21 @@
     <input type="text" id="admin-whatsapp" placeholder="e.g., +234XXXXXXXXXX">
     <button onclick="updateWhatsApp()">Update</button>
 
+    <!-- Store Color Customization -->
+    <h2>Customize Store Colors</h2>
+    <label>Header Color:</label>
+    <input type="color" id="header-color-picker">
+    <button onclick="updateHeaderColor()">Update Header Color</button>
+    <br>
+    <label>Button Color:</label>
+    <input type="color" id="button-color-picker">
+    <button onclick="updateButtonColor()">Update Button Color</button>
+
     <!-- Add New Product -->
     <h2>Add New Product</h2>
     <input type="text" id="product-name" placeholder="Product Name">
     <input type="number" id="product-price" placeholder="Price">
-    <input type="text" id="product-image" placeholder="Image filename (e.g., product3.png)">
+    <input type="file" id="product-image-upload" accept="image/*">
     <button onclick="addProduct()">Add Product</button>
   </section>
 
