@@ -1,76 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Store</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Store</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- Header -->
-  <header>
-    <img src="logo.png" alt="Store Logo" class="logo">
-    <h1 id="store-name">Your Store Name</h1>
-  </header>
 
-  <!-- Announcements -->
-  <div id="announcements">
-    <p>Welcome to our store! Check latest updates here.</p>
-  </div>
+<header>
+  <img src="logo.png" alt="Store Logo" class="logo">
+  <h1 id="store-name">Your Store Name</h1>
+</header>
 
-  <!-- Search Bar -->
-  <div id="search-section">
-    <input type="text" id="search-bar" placeholder="Search products..." onkeyup="searchProducts()">
-  </div>
+<div id="announcements">
+  <p>Welcome to our store! Check latest updates here.</p>
+</div>
 
-  <!-- Browse Collection -->
-  <section id="browse-collection">
-    <h2>Browse Collection</h2>
-    <div id="collection-products">
-      <!-- Products added from admin will appear here as well -->
+<!-- Search -->
+<div id="search-section">
+  <input type="text" id="search-bar" placeholder="Search products..." onkeyup="searchProducts()">
+</div>
+
+<!-- Browse Collection -->
+<section id="browse-collection">
+  <h2>Browse Collection</h2>
+  <div id="collection-products"></div>
+</section>
+
+<!-- Products Section -->
+<section id="products"></section>
+
+<!-- Checkout -->
+<section id="checkout">
+  <h2>Checkout</h2>
+  <form id="checkout-form" onsubmit="proceedCheckout(event)">
+    <input type="text" id="name" placeholder="Name" required>
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="tel" id="phone" placeholder="Phone" required>
+    <select id="delivery-method" onchange="updateShipping()">
+      <!-- Options populated from admin -->
+    </select>
+    <div id="delivery-address-section">
+      <label>Pickup Address:</label>
+      <p id="pickup-address"></p>
     </div>
-  </section>
+    <button type="submit">Proceed to Checkout</button>
+  </form>
 
-  <!-- Products Section -->
-  <section id="products">
-    <!-- Products added from admin will also appear here -->
-  </section>
+  <!-- Bank Details -->
+  <div id="bank-details">
+    <h3>Bank Details</h3>
+    <p>Bank Name: <span id="bank-name">Your Bank</span></p>
+    <p>Account Number: <span id="bank-account">1234567890</span></p>
+    <p>Subtotal: ₦<span id="subtotal-amount">0</span></p>
+    <p>Shipping Fee: ₦<span id="shipping-fee">0</span></p>
+    <p>Total Amount: ₦<span id="total-amount">0</span></p>
+  </div>
+</section>
 
-  <!-- Checkout Section -->
-  <section id="checkout">
-    <h2>Checkout</h2>
-    <form id="checkout-form" onsubmit="proceedCheckout(event)">
-      <input type="text" id="name" placeholder="Name" required>
-      <input type="email" id="email" placeholder="Email" required>
-      <input type="tel" id="phone" placeholder="Phone" required>
-      <select id="delivery">
-        <option value="pickup">Pick-up</option>
-        <option value="delivery">Delivery</option>
-      </select>
-      <button type="submit">Proceed to Checkout</button>
-    </form>
+<!-- WhatsApp -->
+<a href="https://wa.me/234XXXXXXXXXX" target="_blank" id="whatsapp-icon">
+  <img src="whatsapp-icon.png" alt="WhatsApp">
+</a>
 
-    <div id="bank-details" class="hidden">
-      <h3>Bank Details</h3>
-      <p>Bank Name: Your Bank</p>
-      <p>Account Number: 1234567890</p>
-      <p>Amount: ₦<span id="total-amount"></span></p>
-    </div>
-  </section>
-
-  <!-- Floating WhatsApp Icon -->
-  <a href="https://wa.me/234XXXXXXXXXX" target="_blank" id="whatsapp-icon">
-    <img src="whatsapp-icon.png" alt="WhatsApp">
-  </a>
-
-  <!-- EmailJS -->
-  <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
-  <script>
-    (function(){
-      emailjs.init("RN5H1CcY7Fqkakg5w"); // Your public key
-    })();
-  </script>
-
-  <script src="script.js"></script>
+<script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+<script>
+  (function(){emailjs.init("RN5H1CcY7Fqkakg5w");})();
+</script>
+<script src="script.js"></script>
 </body>
 </html>
