@@ -18,9 +18,22 @@
     <p>Welcome to our store! Check latest updates here.</p>
   </div>
 
+  <!-- Search Bar -->
+  <div id="search-section">
+    <input type="text" id="search-bar" placeholder="Search products..." onkeyup="searchProducts()">
+  </div>
+
+  <!-- Browse Collection -->
+  <section id="browse-collection">
+    <h2>Browse Collection</h2>
+    <div id="collection-products">
+      <!-- Products added from admin will appear here as well -->
+    </div>
+  </section>
+
   <!-- Products Section -->
   <section id="products">
-    <!-- Example products; can be added/removed via admin -->
+    <!-- Products added from admin will also appear here -->
   </section>
 
   <!-- Checkout Section -->
@@ -49,6 +62,14 @@
   <a href="https://wa.me/234XXXXXXXXXX" target="_blank" id="whatsapp-icon">
     <img src="whatsapp-icon.png" alt="WhatsApp">
   </a>
+
+  <!-- EmailJS -->
+  <script src="https://cdn.emailjs.com/dist/email.min.js"></script>
+  <script>
+    (function(){
+      emailjs.init("RN5H1CcY7Fqkakg5w"); // Your public key
+    })();
+  </script>
 
   <script src="script.js"></script>
 </body>
