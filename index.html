@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Store</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <img src="https://via.placeholder.com/100x50.png?text=Logo" alt="Store Logo" class="logo">
+    <h1 id="store-name">Your Store Name</h1>
+  </header>
+
+  <!-- Announcements -->
+  <div id="announcements">
+    <p>Welcome to our store! Check latest updates here.</p>
+  </div>
+
+  <!-- Products Section -->
+  <section id="products">
+    <!-- Example product 1 -->
+    <div class="product-card">
+      <img src="https://via.placeholder.com/150" alt="Product 1">
+      <h3>Product 1</h3>
+      <p>₦1000</p>
+      <button onclick="addToCart('Product 1', 1000)">Buy</button>
+    </div>
+
+    <!-- Example product 2 -->
+    <div class="product-card">
+      <img src="https://via.placeholder.com/150" alt="Product 2">
+      <h3>Product 2</h3>
+      <p>₦2000</p>
+      <button onclick="addToCart('Product 2', 2000)">Buy</button>
+    </div>
+
+    <!-- Add more products as needed -->
+  </section>
+
+  <!-- Checkout Section -->
+  <section id="checkout">
+    <h2>Checkout</h2>
+    <form id="checkout-form" onsubmit="proceedCheckout(event)">
+      <input type="text" id="name" placeholder="Name" required>
+      <input type="email" id="email" placeholder="Email" required>
+      <input type="tel" id="phone" placeholder="Phone" required>
+      <select id="delivery">
+        <option value="pickup">Pick-up</option>
+        <option value="delivery">Delivery</option>
+      </select>
+      <button type="submit">Proceed to Checkout</button>
+    </form>
+
+    <div id="bank-details" class="hidden">
+      <h3>Bank Details</h3>
+      <p>Bank Name: Your Bank</p>
+      <p>Account Number: 1234567890</p>
+      <p>Amount: ₦<span id="total-amount"></span></p>
+    </div>
+  </section>
+
+  <!-- Floating WhatsApp Icon -->
+  <a href="https://wa.me/234XXXXXXXXXX" target="_blank" id="whatsapp-icon">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp">
+  </a>
+
+  <script src="script.js"></script>
+</body>
+</html>
