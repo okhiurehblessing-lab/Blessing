@@ -14,6 +14,11 @@
 
 <section id="admin-controls">
 
+  <!-- Admin Email -->
+  <h2>Admin Email for Notifications</h2>
+  <input type="email" id="admin-email" placeholder="Your email for order notifications">
+  <button onclick="updateAdminEmail()">Update Email</button>
+
   <!-- Logo Upload -->
   <h2>Upload Store Logo</h2>
   <input type="file" id="admin-logo" accept="image/*">
@@ -46,6 +51,7 @@
   <!-- Bank Details -->
   <h2>Update Bank Details</h2>
   <input type="text" id="admin-bank-name" placeholder="Bank Name">
+  <input type="text" id="admin-bank-account-name" placeholder="Account Name">
   <input type="text" id="admin-bank-account" placeholder="Account Number">
   <button onclick="updateBankDetails()">Update Bank Details</button>
 
@@ -53,9 +59,9 @@
   <h2>Delivery & Shipping</h2>
   <div id="delivery-list"></div>
   <input type="text" id="delivery-method-name" placeholder="Delivery Method">
+  <input type="text" id="delivery-area" placeholder="Area / State">
   <input type="number" id="delivery-fee" placeholder="Fee">
   <input type="text" id="delivery-estimate" placeholder="Estimated Time">
-  <input type="text" id="delivery-address" placeholder="Pickup Address (optional)">
   <button onclick="addDeliveryMethod()">Add/Update Delivery</button>
 
   <!-- Add Product -->
@@ -64,8 +70,17 @@
   <input type="number" id="product-price" placeholder="Selling Price">
   <input type="number" id="product-cost" placeholder="Original Cost">
   <input type="file" id="product-image-upload" accept="image/*">
-  <input type="text" id="product-colors" placeholder="Colors (comma separated)">
-  <input type="text" id="product-sizes" placeholder="Sizes (comma separated)">
+
+  <h3>Available Colors</h3>
+  <div id="color-list"></div>
+  <input type="text" id="product-color" placeholder="Color Name">
+  <button onclick="addColor()">Add Color</button>
+
+  <h3>Available Sizes</h3>
+  <div id="size-list"></div>
+  <input type="text" id="product-size" placeholder="Size Name">
+  <button onclick="addSize()">Add Size</button>
+
   <button onclick="addProduct()">Add Product</button>
 
   <!-- Orders & Profit -->
