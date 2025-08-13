@@ -49,6 +49,15 @@
   <input type="text" id="admin-bank-account" placeholder="Account Number">
   <button onclick="updateBankDetails()">Update Bank Details</button>
 
+  <!-- Delivery & Shipping -->
+  <h2>Delivery & Shipping</h2>
+  <div id="delivery-list"></div>
+  <input type="text" id="delivery-method-name" placeholder="Delivery Method">
+  <input type="number" id="delivery-fee" placeholder="Fee">
+  <input type="text" id="delivery-estimate" placeholder="Estimated Time">
+  <input type="text" id="delivery-address" placeholder="Pickup Address (optional)">
+  <button onclick="addDeliveryMethod()">Add/Update Delivery</button>
+
   <!-- Add Product -->
   <h2>Add New Product</h2>
   <input type="text" id="product-name" placeholder="Product Name">
@@ -61,9 +70,7 @@
 
   <!-- Orders & Profit -->
   <h2>Orders & Earnings</h2>
-  <div id="order-records">
-    <p>No orders yet.</p>
-  </div>
+  <div id="order-records"><p>No orders yet.</p></div>
 
 </section>
 
