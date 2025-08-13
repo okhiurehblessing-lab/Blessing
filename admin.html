@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Admin Panel</h1>
+  </header>
+
+  <section id="admin-controls">
+    <!-- Update Store Name -->
+    <h2>Update Store Name</h2>
+    <input type="text" id="admin-store-name" placeholder="New Store Name">
+    <button onclick="updateStoreName()">Update</button>
+
+    <!-- Update Announcement -->
+    <h2>Update Announcement</h2>
+    <input type="text" id="admin-announcement" placeholder="New Announcement">
+    <button onclick="updateAnnouncement()">Update</button>
+
+    <!-- Update WhatsApp Number -->
+    <h2>Update WhatsApp Number</h2>
+    <input type="text" id="admin-whatsapp" placeholder="e.g., +234XXXXXXXXXX">
+    <button onclick="updateWhatsApp()">Update</button>
+
+    <!-- Add New Product -->
+    <h2>Add New Product</h2>
+    <input type="text" id="product-name" placeholder="Product Name">
+    <input type="number" id="product-price" placeholder="Price">
+    <input type="text" id="product-image" placeholder="Image filename (e.g., product3.png)">
+    <button onclick="addProduct()">Add Product</button>
+  </section>
+
+  <script src="script.js"></script>
+</body>
+</html>
