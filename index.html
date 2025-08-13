@@ -38,13 +38,14 @@
     <input type="text" id="name" placeholder="Name" required>
     <input type="email" id="email" placeholder="Email" required>
     <input type="tel" id="phone" placeholder="Phone" required>
+    
+    <label for="customer-address">Delivery Address:</label>
+    <textarea id="customer-address" placeholder="Enter full address" rows="3" required></textarea>
+    
     <select id="delivery-method" onchange="updateShipping()">
       <!-- Options populated from admin -->
     </select>
-    <div id="delivery-address-section">
-      <label>Pickup Address:</label>
-      <p id="pickup-address"></p>
-    </div>
+
     <button type="submit">Proceed to Checkout</button>
   </form>
 
@@ -52,6 +53,7 @@
   <div id="bank-details">
     <h3>Bank Details</h3>
     <p>Bank Name: <span id="bank-name">Your Bank</span></p>
+    <p>Account Name: <span id="bank-account-name">Your Name</span></p>
     <p>Account Number: <span id="bank-account">1234567890</span></p>
     <p>Subtotal: ₦<span id="subtotal-amount">0</span></p>
     <p>Shipping Fee: ₦<span id="shipping-fee">0</span></p>
