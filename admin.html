@@ -1,55 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Panel</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>Admin Panel</h1>
-  </header>
 
-  <section id="admin-controls">
-    <!-- Logo Upload -->
-    <h2>Upload Store Logo</h2>
-    <input type="file" id="admin-logo" accept="image/*">
-    <button onclick="updateLogo()">Update Logo</button>
+<header>
+  <h1>Admin Panel</h1>
+</header>
 
-    <!-- Update Store Name -->
-    <h2>Update Store Name</h2>
-    <input type="text" id="admin-store-name" placeholder="New Store Name">
-    <button onclick="updateStoreName()">Update</button>
+<section id="admin-controls">
 
-    <!-- Update Announcement -->
-    <h2>Update Announcement</h2>
-    <input type="text" id="admin-announcement" placeholder="New Announcement">
-    <button onclick="updateAnnouncement()">Update</button>
+  <!-- Logo Upload -->
+  <h2>Upload Store Logo</h2>
+  <input type="file" id="admin-logo" accept="image/*">
+  <button onclick="updateLogo()">Update Logo</button>
 
-    <!-- Update WhatsApp Number -->
-    <h2>Update WhatsApp Number</h2>
-    <input type="text" id="admin-whatsapp" placeholder="e.g., +234XXXXXXXXXX">
-    <button onclick="updateWhatsApp()">Update</button>
+  <!-- Store Name -->
+  <h2>Update Store Name</h2>
+  <input type="text" id="admin-store-name" placeholder="New Store Name">
+  <button onclick="updateStoreName()">Update</button>
 
-    <!-- Store Color Customization -->
-    <h2>Customize Store Colors</h2>
-    <label>Header Color:</label>
-    <input type="color" id="header-color-picker">
-    <button onclick="updateHeaderColor()">Update Header Color</button>
-    <br>
-    <label>Button Color:</label>
-    <input type="color" id="button-color-picker">
-    <button onclick="updateButtonColor()">Update Button Color</button>
+  <!-- Announcement -->
+  <h2>Update Announcement</h2>
+  <input type="text" id="admin-announcement" placeholder="New Announcement">
+  <button onclick="updateAnnouncement()">Update</button>
 
-    <!-- Add New Product -->
-    <h2>Add New Product</h2>
-    <input type="text" id="product-name" placeholder="Product Name">
-    <input type="number" id="product-price" placeholder="Price">
-    <input type="file" id="product-image-upload" accept="image/*">
-    <button onclick="addProduct()">Add Product</button>
-  </section>
+  <!-- WhatsApp -->
+  <h2>Update WhatsApp Number</h2>
+  <input type="text" id="admin-whatsapp" placeholder="e.g., +234XXXXXXXXXX">
+  <button onclick="updateWhatsApp()">Update</button>
 
-  <script src="script.js"></script>
+  <!-- Store Colors -->
+  <h2>Customize Store Colors</h2>
+  <label>Header Color:</label>
+  <input type="color" id="header-color-picker">
+  <button onclick="updateHeaderColor()">Update Header Color</button><br>
+  <label>Button Color:</label>
+  <input type="color" id="button-color-picker">
+  <button onclick="updateButtonColor()">Update Button Color</button>
+
+  <!-- Bank Details -->
+  <h2>Update Bank Details</h2>
+  <input type="text" id="admin-bank-name" placeholder="Bank Name">
+  <input type="text" id="admin-bank-account" placeholder="Account Number">
+  <button onclick="updateBankDetails()">Update Bank Details</button>
+
+  <!-- Add Product -->
+  <h2>Add New Product</h2>
+  <input type="text" id="product-name" placeholder="Product Name">
+  <input type="number" id="product-price" placeholder="Selling Price">
+  <input type="number" id="product-cost" placeholder="Original Cost">
+  <input type="file" id="product-image-upload" accept="image/*">
+  <input type="text" id="product-colors" placeholder="Colors (comma separated)">
+  <input type="text" id="product-sizes" placeholder="Sizes (comma separated)">
+  <button onclick="addProduct()">Add Product</button>
+
+  <!-- Orders & Profit -->
+  <h2>Orders & Earnings</h2>
+  <div id="order-records">
+    <p>No orders yet.</p>
+  </div>
+
+</section>
+
+<script src="script.js"></script>
 </body>
 </html>
