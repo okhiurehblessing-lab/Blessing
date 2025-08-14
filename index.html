@@ -1,51 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My Store</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Store</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+<script>
+  (function(){emailjs.init('RN5H1CcY7Fqkakg5w');})();
+</script>
 </head>
 <body>
 
+<!-- HEADER -->
 <header>
-  <img src="logo.png" alt="Store Logo" id="store-logo" class="logo">
-  <h1 id="store-name-title">My Store</h1>
+  <img src="logo.png" alt="Logo" class="logo">
+  <h1 id="store-name-display">My Store</h1>
+  <input type="text" id="search-bar" placeholder="Search products...">
+  <div id="cart-icon">🛒<span id="cart-count">0</span></div>
 </header>
 
-<section id="collections-section">
-  <h2>Collections</h2>
+<!-- ANNOUNCEMENTS -->
+<div id="store-announcement">Welcome to my store!</div>
+
+<!-- COLLECTIONS FILTER -->
+<div id="collections-section">
+  <label for="collection-filter">Filter by Collection:</label>
   <select id="collection-filter">
-    <option value="all">All</option>
+    <option value="">All</option>
   </select>
-</section>
+</div>
 
-<section id="products-section">
-  <h2>Products</h2>
-  <div id="products"></div>
-</section>
+<!-- PRODUCTS -->
+<section id="products-section"></section>
 
-<section id="cart-section">
-  <h2>Cart</h2>
-  <div id="cart-items"></div>
-  <p id="total-price"></p>
-  <h3>Delivery & Address</h3>
-  <input type="text" id="customer-name" placeholder="Your Name">
-  <input type="text" id="customer-phone" placeholder="Phone Number">
-  <input type="text" id="customer-address" placeholder="Address">
-  <select id="delivery-zone"></select>
-  <button id="checkout-btn">Checkout</button>
-  <div id="bank-details">
-    <h3>Bank Details</h3>
-    <p id="bank-name"></p>
-    <p id="bank-number"></p>
+<!-- CART MODAL -->
+<div class="modal" id="cart-modal">
+  <div class="modal-content">
+    <span id="close-cart">&times;</span>
+    <h3>Your Cart</h3>
+    <div id="cart-items"></div>
+    <input type="text" id="customer-name" placeholder="Your Name">
+    <input type="text" id="customer-email" placeholder="Your Email">
+    <input type="text" id="customer-phone" placeholder="Phone Number">
+    <input type="text" id="customer-address" placeholder="Delivery Address">
+    <select id="delivery-zone"></select>
+    <button id="checkout-btn">Place Order</button>
   </div>
-</section>
+</div>
 
+<!-- WHATSAPP ICON -->
 <div id="whatsapp-icon">
-  <a id="whatsapp-link" href="" target="_blank">
-    <img src="whatsapp-icon.png" alt="WhatsApp">
-  </a>
+  <a href="https://wa.me/"><img src="whatsapp-icon.png" alt="WhatsApp"></a>
 </div>
 
 <script src="script.js"></script>
