@@ -1,148 +1,204 @@
-// --- Load Data ---
-const products = JSON.parse(localStorage.getItem("products")) || [];
-const collections = JSON.parse(localStorage.getItem("collections")) || {};
-const settings = JSON.parse(localStorage.getItem("settings")) || {};
-
-// --- Elements ---
-const productsDiv = document.getElementById("products");
-const collectionFilter = document.getElementById("collection-filter");
-const storeLogo = document.getElementById("store-logo");
-const storeNameTitle = document.getElementById("store-name-title");
-const cartItemsDiv = document.getElementById("cart-items");
-const totalPriceEl = document.getElementById("total-price");
-const checkoutBtn = document.getElementById("checkout-btn");
-const bankNameEl = document.getElementById("bank-name");
-const bankNumberEl = document.getElementById("bank-number");
-const whatsappLink = document.getElementById("whatsapp-link");
-const deliveryZoneSelect = document.getElementById("delivery-zone");
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
-
-// --- Initialize Store ---
-function initStore() {
-  // Store Settings
-  storeLogo.src = settings.storeLogo || "logo.png";
-  storeNameTitle.textContent = settings.storeName || "My Store";
-  whatsappLink.href = `https://wa.me/${settings.whatsappNumber || ""}`;
-  bankNameEl.textContent = settings.bankAccountName || "";
-  bankNumberEl.textContent = settings.bankAccountNumber || "";
-
-  // Populate Collections
-  collectionFilter.innerHTML = `<option value="all">All</option>`;
-  Object.keys(collections).forEach(col => {
-    const opt = document.createElement("option");
-    opt.value = col;
-    opt.textContent = col;
-    collectionFilter.appendChild(opt);
-  });
-
-  renderProducts();
-  renderCart();
-  renderDeliveryZones();
+/* ---------- GLOBAL ---------- */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: #f9f9f9;
+    color: #333;
 }
 
-// --- Render Products ---
-function renderProducts(filter="all") {
-  productsDiv.innerHTML = "";
-  let filteredProducts = products;
-  if(filter !== "all"){
-    const indexes = collections[filter] || [];
-    filteredProducts = indexes.map(i => products[i]);
-  }
-  filteredProducts.forEach((prod, i) => {
-    const div = document.createElement("div");
-    div.classList.add("product-card");
-    div.innerHTML = `
-      <img src="${prod.image || 'product1.png'}" alt="${prod.name}">
-      <strong>${prod.name}</strong><br>
-      Price: ${prod.price}<br>
-      <label>Colors: <select>${prod.colors.map(c=>`<option>${c}</option>`).join("")}</select></label><br>
-      <label>Sizes: <select>${prod.sizes.map(s=>`<option>${s}</option>`).join("")}</select></label><br>
-      <button onclick="addToCart(${i})">Add to Cart</button>
-    `;
-    productsDiv.appendChild(div);
-  });
+h1, h2, h3 {
+    margin: 0.5em 0;
 }
 
-// --- Collection Filter Change ---
-collectionFilter.addEventListener("change", e=>{
-  renderProducts(e.target.value);
-});
-
-// --- Cart Functions ---
-function addToCart(index){
-  const prod = products[index];
-  const existing = cart.find(c=>c.name===prod.name);
-  if(existing) existing.qty += 1;
-  else cart.push({...prod, qty:1});
-  localStorage.setItem("cart", JSON.stringify(cart));
-  renderCart();
+/* ---------- HEADER ---------- */
+header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background: #ff6600;
+    color: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
 }
 
-function renderCart(){
-  cartItemsDiv.innerHTML = "";
-  let total = 0;
-  cart.forEach((item,i)=>{
-    const div = document.createElement("div");
-    div.innerHTML = `
-      ${item.name} | Qty: 
-      <button onclick="changeQty(${i},-1)">-</button>
-      ${item.qty}
-      <button onclick="changeQty(${i},1)">+</button>
-      | Subtotal: ${item.price*item.qty}
-    `;
-    total += item.price*item.qty;
-    cartItemsDiv.appendChild(div);
-  });
-  totalPriceEl.textContent = `Total: ${total}`;
+header .logo {
+    height: 50px;
 }
 
-function changeQty(i, delta){
-  cart[i].qty += delta;
-  if(cart[i].qty <= 0) cart.splice(i,1);
-  localStorage.setItem("cart", JSON.stringify(cart));
-  renderCart();
+#search-bar {
+    flex: 1;
+    margin: 0 15px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: none;
 }
 
-// --- Delivery Zones ---
-function renderDeliveryZones(){
-  // Example: Add zones manually or fetch from settings if you implement that
-  deliveryZoneSelect.innerHTML = "";
-  const zones = [
-    {name:"Ikeja", fee:500},
-    {name:"Lekki", fee:700},
-    {name:"Victoria Island", fee:1000},
-    {name:"Outside Lagos", fee:1500}
-  ];
-  zones.forEach(z=>{
-    const opt = document.createElement("option");
-    opt.value = z.fee;
-    opt.textContent = `${z.name} - Fee: ${z.fee}`;
-    deliveryZoneSelect.appendChild(opt);
-  });
+#cart-icon {
+    cursor: pointer;
+    position: relative;
+    font-size: 1.5em;
 }
 
-// --- Checkout ---
-checkoutBtn.addEventListener("click", ()=>{
-  const customerName = document.getElementById("customer-name").value;
-  const phone = document.getElementById("customer-phone").value;
-  const address = document.getElementById("customer-address").value;
-  const deliveryFee = parseInt(deliveryZoneSelect.value);
-  if(!customerName || !phone || !address){
-    alert("Please fill in all fields!");
-    return;
-  }
-
-  // Send order via EmailJS (if implemented)
-  alert("Order placed successfully! Total with delivery: "+(getCartTotal()+deliveryFee));
-
-  cart = [];
-  localStorage.setItem("cart", JSON.stringify(cart));
-  renderCart();
-});
-
-function getCartTotal(){
-  return cart.reduce((sum, item)=>sum+item.price*item.qty,0);
+#cart-count {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: red;
+    color: #fff;
+    font-size: 0.7em;
+    padding: 2px 5px;
+    border-radius: 50%;
 }
 
-// --- Initialize ---
-initStore();
+/* ---------- ANNOUNCEMENTS ---------- */
+#store-announcement {
+    background: #ffe5b4;
+    padding: 10px 20px;
+    font-weight: bold;
+    text-align: center;
+}
+
+/* ---------- PRODUCTS ---------- */
+#products-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+    padding: 20px;
+}
+
+.product-card {
+    background: #fff;
+    border-radius: 5px;
+    padding: 10px;
+    box-shadow: 0 0 6px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.product-card img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 5px;
+}
+
+.product-card button {
+    margin-top: 5px;
+    padding: 5px 10px;
+    background: #ff6600;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.product-card button:hover {
+    background: #e65c00;
+}
+
+/* ---------- CART MODAL ---------- */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background: #fff;
+    margin: 5% auto;
+    padding: 20px;
+    width: 90%;
+    max-width: 500px;
+    border-radius: 5px;
+    position: relative;
+}
+
+#close-cart {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 1.5em;
+    cursor: pointer;
+}
+
+/* ---------- ADMIN PANEL ---------- */
+#admin-panel, section[id$="-management"], #store-settings, #bank-details {
+    background: #fff;
+    margin: 15px;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 0 6px rgba(0,0,0,0.1);
+}
+
+#admin-panel h2, section h2 {
+    color: #ff6600;
+    margin-bottom: 10px;
+}
+
+input, select, textarea {
+    width: 100%;
+    margin: 5px 0 10px 0;
+    padding: 8px;
+    border-radius: 3px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+}
+
+button {
+    background: #ff6600;
+    color: #fff;
+    border: none;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+button:hover {
+    background: #e65c00;
+}
+
+/* ---------- COLLECTIONS ---------- */
+#collections-section {
+    padding: 0 20px;
+    margin-top: 10px;
+}
+
+/* ---------- WHATSAPP ICON ---------- */
+#whatsapp-icon {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 3000;
+}
+
+#whatsapp-icon img {
+    width: 50px;
+    height: 50px;
+    cursor: pointer;
+}
+
+/* ---------- RESPONSIVE ---------- */
+@media(max-width: 600px){
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    #search-bar {
+        margin: 10px 0;
+        width: 100%;
+    }
+
+    #products-section {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+}
