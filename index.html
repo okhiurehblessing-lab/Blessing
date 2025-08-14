@@ -1,75 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>My Store</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Store</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header>
-  <img src="logo.png" alt="Store Logo" class="logo">
-  <h1 id="store-name">Your Store Name</h1>
+  <img src="logo.png" alt="Store Logo" id="store-logo" class="logo">
+  <h1 id="store-name-title">My Store</h1>
 </header>
 
-<div id="announcements">
-  <p>Welcome to our store! Check latest updates here.</p>
-</div>
-
-<!-- Search -->
-<div id="search-section">
-  <input type="text" id="search-bar" placeholder="Search products..." onkeyup="searchProducts()">
-</div>
-
-<!-- Browse Collection -->
-<section id="browse-collection">
-  <h2>Browse Collection</h2>
-  <div id="collection-products"></div>
+<section id="collections-section">
+  <h2>Collections</h2>
+  <select id="collection-filter">
+    <option value="all">All</option>
+  </select>
 </section>
 
-<!-- Products Section -->
-<section id="products"></section>
+<section id="products-section">
+  <h2>Products</h2>
+  <div id="products"></div>
+</section>
 
-<!-- Checkout -->
-<section id="checkout">
-  <h2>Checkout</h2>
-  <form id="checkout-form" onsubmit="proceedCheckout(event)">
-    <input type="text" id="name" placeholder="Name" required>
-    <input type="email" id="email" placeholder="Email" required>
-    <input type="tel" id="phone" placeholder="Phone" required>
-    
-    <label for="customer-address">Delivery Address:</label>
-    <textarea id="customer-address" placeholder="Enter full address" rows="3" required></textarea>
-    
-    <select id="delivery-method" onchange="updateShipping()">
-      <!-- Options populated from admin -->
-    </select>
-
-    <button type="submit">Proceed to Checkout</button>
-  </form>
-
-  <!-- Bank Details -->
+<section id="cart-section">
+  <h2>Cart</h2>
+  <div id="cart-items"></div>
+  <p id="total-price"></p>
+  <h3>Delivery & Address</h3>
+  <input type="text" id="customer-name" placeholder="Your Name">
+  <input type="text" id="customer-phone" placeholder="Phone Number">
+  <input type="text" id="customer-address" placeholder="Address">
+  <select id="delivery-zone"></select>
+  <button id="checkout-btn">Checkout</button>
   <div id="bank-details">
     <h3>Bank Details</h3>
-    <p>Bank Name: <span id="bank-name">Your Bank</span></p>
-    <p>Account Name: <span id="bank-account-name">Your Name</span></p>
-    <p>Account Number: <span id="bank-account">1234567890</span></p>
-    <p>Subtotal: ₦<span id="subtotal-amount">0</span></p>
-    <p>Shipping Fee: ₦<span id="shipping-fee">0</span></p>
-    <p>Total Amount: ₦<span id="total-amount">0</span></p>
+    <p id="bank-name"></p>
+    <p id="bank-number"></p>
   </div>
 </section>
 
-<!-- WhatsApp -->
-<a href="https://wa.me/234XXXXXXXXXX" target="_blank" id="whatsapp-icon">
-  <img src="whatsapp-icon.png" alt="WhatsApp">
-</a>
+<div id="whatsapp-icon">
+  <a id="whatsapp-link" href="" target="_blank">
+    <img src="whatsapp-icon.png" alt="WhatsApp">
+  </a>
+</div>
 
-<script src="https://cdn.emailjs.com/dist/email.min.js"></script>
-<script>
-  (function(){emailjs.init("RN5H1CcY7Fqkakg5w");})();
-</script>
 <script src="script.js"></script>
 </body>
 </html>
