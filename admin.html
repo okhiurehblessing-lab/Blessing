@@ -1,48 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Panel</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+<script>
+  (function(){emailjs.init('RN5H1CcY7Fqkakg5w');})();
+</script>
 </head>
 <body>
 
-<header>
-  <img src="logo.png" alt="Store Logo" class="logo">
-  <h1>Admin Panel</h1>
-</header>
+<h1>Admin Panel</h1>
 
-<section id="product-management">
-  <h2>Add / Edit Product</h2>
-  <form id="product-form">
-    <input type="hidden" id="product-id">
-    <input type="text" id="product-name" placeholder="Product Name" required>
-    <input type="number" id="product-price" placeholder="Product Price" required>
-    <input type="number" id="product-cost" placeholder="Product Cost" required>
-    <input type="file" id="product-image">
-    <textarea id="product-colors" placeholder="Colors (one per line)"></textarea>
-    <textarea id="product-sizes" placeholder="Sizes (one per line)"></textarea>
-    <button type="submit">Add / Update Product</button>
-  </form>
-
-  <h3>Existing Products</h3>
-  <div id="admin-products"></div>
-</section>
-
-<section id="collection-management">
-  <h2>Assign Products to Collections</h2>
-  <div id="collection-products"></div>
-</section>
-
-<section id="settings">
+<!-- Store Settings -->
+<section id="store-settings">
   <h2>Store Settings</h2>
   <input type="text" id="store-name" placeholder="Store Name">
-  <input type="file" id="store-logo">
-  <input type="text" id="whatsapp-number" placeholder="WhatsApp Number">
-  <input type="text" id="bank-account-name" placeholder="Bank Account Name">
-  <input type="text" id="bank-account-number" placeholder="Bank Account Number">
-  <button id="save-all">Save All</button>
+  <input type="color" id="store-color" value="#ff6600">
+  <input type="text" id="store-logo" placeholder="Logo URL">
+  <textarea id="store-announcement-input" placeholder="Store Announcement"></textarea>
+  <button onclick="saveStoreSettings()">Save Settings</button>
+</section>
+
+<!-- Product Management -->
+<section id="product-management">
+  <h2>Products</h2>
+  <div id="admin-products"></div>
+  <button onclick="addProductPrompt()">Add New Product</button>
+</section>
+
+<!-- Collections -->
+<section id="collection-management">
+  <h2>Collections</h2>
+  <div id="collection-products"></div>
+  <button onclick="addCollectionPrompt()">Add New Collection</button>
+</section>
+
+<!-- Delivery Zones -->
+<section id="delivery-management">
+  <h2>Delivery Zones</h2>
+  <div id="delivery-zones-list"></div>
+  <button onclick="addDeliveryZonePrompt()">Add Delivery Zone</button>
+</section>
+
+<!-- Bank Details -->
+<section id="bank-details">
+  <h2>Bank Details</h2>
+  <input type="text" id="bank-name" placeholder="Bank Name">
+  <input type="text" id="account-name" placeholder="Account Name">
+  <input type="text" id="account-number" placeholder="Account Number">
+</section>
+
+<!-- Orders -->
+<section id="order-management">
+  <h2>Orders</h2>
+  <div id="admin-orders"></div>
 </section>
 
 <script src="script.js"></script>
