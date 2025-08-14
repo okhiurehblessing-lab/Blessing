@@ -5,58 +5,51 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Panel</title>
 <link rel="stylesheet" href="style.css">
-<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
-<script>
-  (function(){emailjs.init('RN5H1CcY7Fqkakg5w');})();
-</script>
 </head>
 <body>
 
 <h1>Admin Panel</h1>
 
-<!-- Store Settings -->
-<section id="store-settings">
+<section>
   <h2>Store Settings</h2>
-  <input type="text" id="store-name" placeholder="Store Name">
-  <input type="color" id="store-color" value="#ff6600">
-  <input type="text" id="store-logo" placeholder="Logo URL">
-  <textarea id="store-announcement-input" placeholder="Store Announcement"></textarea>
-  <button onclick="saveStoreSettings()">Save Settings</button>
+  <label>Store Name:</label>
+  <input type="text" id="admin-store-name">
+  <label>Store Announcement:</label>
+  <input type="text" id="admin-store-announcement">
+  <label>Store Logo:</label>
+  <input type="file" id="admin-store-logo" accept="image/*" capture="camera">
+  <label>Store Main Color:</label>
+  <input type="color" id="admin-store-color">
+  <label>Button Color:</label>
+  <input type="color" id="admin-button-color">
+  <label>WhatsApp Number:</label>
+  <input type="text" id="admin-whatsapp-number" placeholder="e.g., 2348012345678">
+  <button id="save-store-settings">Save</button>
 </section>
 
-<!-- Product Management -->
-<section id="product-management">
+<section>
   <h2>Products</h2>
-  <div id="admin-products"></div>
-  <button onclick="addProductPrompt()">Add New Product</button>
+  <label>Name:</label>
+  <input type="text" id="admin-product-name">
+  <label>Price:</label>
+  <input type="number" id="admin-product-price">
+  <label>Original Cost:</label>
+  <input type="number" id="admin-product-cost">
+  <label>Colors (each line):</label>
+  <textarea id="admin-product-colors" placeholder="One color per line"></textarea>
+  <label>Sizes (each line):</label>
+  <textarea id="admin-product-sizes" placeholder="One size per line"></textarea>
+  <label>Image:</label>
+  <input type="file" id="admin-product-image" accept="image/*" capture="camera">
+  <label>Collection:</label>
+  <input type="text" id="admin-product-collection">
+  <button id="add-product-btn">Add Product</button>
+  <div id="admin-products-list"></div>
 </section>
 
-<!-- Collections -->
-<section id="collection-management">
-  <h2>Collections</h2>
-  <div id="collection-products"></div>
-  <button onclick="addCollectionPrompt()">Add New Collection</button>
-</section>
-
-<!-- Delivery Zones -->
-<section id="delivery-management">
-  <h2>Delivery Zones</h2>
-  <div id="delivery-zones-list"></div>
-  <button onclick="addDeliveryZonePrompt()">Add Delivery Zone</button>
-</section>
-
-<!-- Bank Details -->
-<section id="bank-details">
-  <h2>Bank Details</h2>
-  <input type="text" id="bank-name" placeholder="Bank Name">
-  <input type="text" id="account-name" placeholder="Account Name">
-  <input type="text" id="account-number" placeholder="Account Number">
-</section>
-
-<!-- Orders -->
-<section id="order-management">
-  <h2>Orders</h2>
-  <div id="admin-orders"></div>
+<section>
+  <h2>Assign Products to Collections</h2>
+  <div id="assign-collections-list"></div>
 </section>
 
 <script src="script.js"></script>
