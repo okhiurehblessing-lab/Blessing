@@ -6,54 +6,63 @@
 <title>My Store</title>
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
-<script>
-  (function(){emailjs.init('RN5H1CcY7Fqkakg5w');})();
-</script>
 </head>
 <body>
 
-<!-- HEADER -->
 <header>
-  <img src="logo.png" alt="Logo" class="logo">
+  <img class="logo" src="" alt="Store Logo">
   <h1 id="store-name-display">My Store</h1>
-  <input type="text" id="search-bar" placeholder="Search products...">
-  <div id="cart-icon">🛒<span id="cart-count">0</span></div>
+  <div id="cart-icon">🛒 <span id="cart-count">0</span></div>
 </header>
 
-<!-- ANNOUNCEMENTS -->
 <div id="store-announcement">Welcome to my store!</div>
 
-<!-- COLLECTIONS FILTER -->
-<div id="collections-section">
+<section>
   <label for="collection-filter">Filter by Collection:</label>
   <select id="collection-filter">
     <option value="">All</option>
   </select>
-</div>
+</section>
 
-<!-- PRODUCTS -->
-<section id="products-section"></section>
+<section class="products-grid" id="products-section"></section>
 
-<!-- CART MODAL -->
-<div class="modal" id="cart-modal">
+<!-- Product Detail Modal -->
+<div class="modal" id="product-modal">
   <div class="modal-content">
-    <span id="close-cart">&times;</span>
-    <h3>Your Cart</h3>
-    <div id="cart-items"></div>
-    <input type="text" id="customer-name" placeholder="Your Name">
-    <input type="text" id="customer-email" placeholder="Your Email">
-    <input type="text" id="customer-phone" placeholder="Phone Number">
-    <input type="text" id="customer-address" placeholder="Delivery Address">
-    <select id="delivery-zone"></select>
-    <button id="checkout-btn">Place Order</button>
+    <span id="close-product">✖</span>
+    <h2 id="modal-product-name"></h2>
+    <img id="modal-product-image" src="" alt="Product Image">
+    <p>Price: ₦<span id="modal-product-price"></span></p>
+    <div>Colors: <span id="modal-colors"></span></div>
+    <div>Sizes: <span id="modal-sizes"></span></div>
+    <div>Quantity: <button id="qty-minus">−</button> <span id="qty-value">1</span> <button id="qty-plus">+</button></div>
+    <button id="add-to-cart-btn">Add to Cart</button>
   </div>
 </div>
 
-<!-- WHATSAPP ICON -->
-<div id="whatsapp-icon">
-  <a href="https://wa.me/"><img src="whatsapp-icon.png" alt="WhatsApp"></a>
+<!-- Cart Modal -->
+<div class="modal" id="cart-modal">
+  <div class="modal-content">
+    <span id="close-cart">✖</span>
+    <h2>My Cart</h2>
+    <div id="cart-items"></div>
+    <h3>Total: ₦<span id="cart-total">0</span></h3>
+    <h4>Delivery Address</h4>
+    <textarea id="customer-address" placeholder="Enter your delivery address"></textarea>
+    <h4>Delivery Method</h4>
+    <select id="customer-delivery-method"></select>
+    <button id="checkout-btn">Checkout</button>
+  </div>
 </div>
 
+<!-- WhatsApp Icon -->
+<a href="#" target="_blank" id="whatsapp-icon">
+  <img src="whatsapp-icon.png" alt="WhatsApp" />
+</a>
+
 <script src="script.js"></script>
+<script>
+emailjs.init("RN5H1CcY7Fqkakg5w");
+</script>
 </body>
 </html>
