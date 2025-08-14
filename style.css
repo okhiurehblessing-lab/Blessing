@@ -1,163 +1,148 @@
-/* --- General --- */
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-  background-color: #fdfdfd;
-  color: #333;
+// --- Load Data ---
+const products = JSON.parse(localStorage.getItem("products")) || [];
+const collections = JSON.parse(localStorage.getItem("collections")) || {};
+const settings = JSON.parse(localStorage.getItem("settings")) || {};
+
+// --- Elements ---
+const productsDiv = document.getElementById("products");
+const collectionFilter = document.getElementById("collection-filter");
+const storeLogo = document.getElementById("store-logo");
+const storeNameTitle = document.getElementById("store-name-title");
+const cartItemsDiv = document.getElementById("cart-items");
+const totalPriceEl = document.getElementById("total-price");
+const checkoutBtn = document.getElementById("checkout-btn");
+const bankNameEl = document.getElementById("bank-name");
+const bankNumberEl = document.getElementById("bank-number");
+const whatsappLink = document.getElementById("whatsapp-link");
+const deliveryZoneSelect = document.getElementById("delivery-zone");
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+// --- Initialize Store ---
+function initStore() {
+  // Store Settings
+  storeLogo.src = settings.storeLogo || "logo.png";
+  storeNameTitle.textContent = settings.storeName || "My Store";
+  whatsappLink.href = `https://wa.me/${settings.whatsappNumber || ""}`;
+  bankNameEl.textContent = settings.bankAccountName || "";
+  bankNumberEl.textContent = settings.bankAccountNumber || "";
+
+  // Populate Collections
+  collectionFilter.innerHTML = `<option value="all">All</option>`;
+  Object.keys(collections).forEach(col => {
+    const opt = document.createElement("option");
+    opt.value = col;
+    opt.textContent = col;
+    collectionFilter.appendChild(opt);
+  });
+
+  renderProducts();
+  renderCart();
+  renderDeliveryZones();
 }
 
-header {
-  display: flex;
-  align-items: center;
-  background-color: #ffcc00;
-  padding: 10px 20px;
-}
-
-header .logo {
-  height: 50px;
-  margin-right: 15px;
-}
-
-h1, h2, h3 {
-  margin: 10px 0;
-}
-
-button {
-  padding: 5px 10px;
-  margin: 5px 0;
-  cursor: pointer;
-  background-color: #ffcc00;
-  border: none;
-  border-radius: 5px;
-}
-
-input, select, textarea {
-  padding: 5px;
-  margin: 5px 0;
-  width: 100%;
-  max-width: 400px;
-  box-sizing: border-box;
-}
-
-section {
-  margin: 20px;
-  padding: 15px;
-  border-bottom: 1px solid #ccc;
-}
-
-/* --- Products --- */
-#products, #collection-products {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-}
-
-.product-card {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 10px;
-  width: 200px;
-  text-align: center;
-  background-color: #fff;
-}
-
-.product-card img {
-  width: 100%;
-  height: auto;
-  border-radius: 5px;
-}
-
-.product-card select {
-  margin: 5px 0;
-}
-
-/* --- Checkout --- */
-#checkout form {
-  display: flex;
-  flex-direction: column;
-  max-width: 500px;
-}
-
-#checkout button {
-  margin-top: 10px;
-}
-
-#bank-details {
-  margin-top: 15px;
-  padding: 10px;
-  border: 1px solid #ddd;
-  background-color: #f9f9f9;
-}
-
-/* --- WhatsApp --- */
-#whatsapp-icon {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 60px;
-  height: 60px;
-}
-
-#whatsapp-icon img {
-  width: 100%;
-  height: 100%;
-}
-
-/* --- Admin Panel --- */
-#admin-controls {
-  padding: 20px;
-}
-
-#admin-controls input[type="text"],
-#admin-controls input[type="email"],
-#admin-controls input[type="number"],
-#admin-controls input[type="file"],
-#admin-controls textarea {
-  margin-bottom: 8px;
-}
-
-#color-list, #size-list, #delivery-list {
-  margin-bottom: 10px;
-}
-
-#color-list p, #size-list p, #delivery-list p {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background-color: #f4f4f4;
-  padding: 5px;
-  border-radius: 5px;
-}
-
-#color-list button, #size-list button, #delivery-list button {
-  background-color: #ff6666;
-  color: #fff;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-}
-
-#color-list button:hover, #size-list button:hover, #delivery-list button:hover {
-  background-color: #ff4444;
-}
-
-h2, h3 {
-  margin-top: 15px;
-}
-
-button:hover {
-  opacity: 0.85;
-}
-
-/* --- Responsive --- */
-@media(max-width: 768px){
-  #products, #collection-products {
-    flex-direction: column;
-    align-items: center;
+// --- Render Products ---
+function renderProducts(filter="all") {
+  productsDiv.innerHTML = "";
+  let filteredProducts = products;
+  if(filter !== "all"){
+    const indexes = collections[filter] || [];
+    filteredProducts = indexes.map(i => products[i]);
   }
-  
-  .product-card {
-    width: 90%;
-  }
+  filteredProducts.forEach((prod, i) => {
+    const div = document.createElement("div");
+    div.classList.add("product-card");
+    div.innerHTML = `
+      <img src="${prod.image || 'product1.png'}" alt="${prod.name}">
+      <strong>${prod.name}</strong><br>
+      Price: ${prod.price}<br>
+      <label>Colors: <select>${prod.colors.map(c=>`<option>${c}</option>`).join("")}</select></label><br>
+      <label>Sizes: <select>${prod.sizes.map(s=>`<option>${s}</option>`).join("")}</select></label><br>
+      <button onclick="addToCart(${i})">Add to Cart</button>
+    `;
+    productsDiv.appendChild(div);
+  });
 }
+
+// --- Collection Filter Change ---
+collectionFilter.addEventListener("change", e=>{
+  renderProducts(e.target.value);
+});
+
+// --- Cart Functions ---
+function addToCart(index){
+  const prod = products[index];
+  const existing = cart.find(c=>c.name===prod.name);
+  if(existing) existing.qty += 1;
+  else cart.push({...prod, qty:1});
+  localStorage.setItem("cart", JSON.stringify(cart));
+  renderCart();
+}
+
+function renderCart(){
+  cartItemsDiv.innerHTML = "";
+  let total = 0;
+  cart.forEach((item,i)=>{
+    const div = document.createElement("div");
+    div.innerHTML = `
+      ${item.name} | Qty: 
+      <button onclick="changeQty(${i},-1)">-</button>
+      ${item.qty}
+      <button onclick="changeQty(${i},1)">+</button>
+      | Subtotal: ${item.price*item.qty}
+    `;
+    total += item.price*item.qty;
+    cartItemsDiv.appendChild(div);
+  });
+  totalPriceEl.textContent = `Total: ${total}`;
+}
+
+function changeQty(i, delta){
+  cart[i].qty += delta;
+  if(cart[i].qty <= 0) cart.splice(i,1);
+  localStorage.setItem("cart", JSON.stringify(cart));
+  renderCart();
+}
+
+// --- Delivery Zones ---
+function renderDeliveryZones(){
+  // Example: Add zones manually or fetch from settings if you implement that
+  deliveryZoneSelect.innerHTML = "";
+  const zones = [
+    {name:"Ikeja", fee:500},
+    {name:"Lekki", fee:700},
+    {name:"Victoria Island", fee:1000},
+    {name:"Outside Lagos", fee:1500}
+  ];
+  zones.forEach(z=>{
+    const opt = document.createElement("option");
+    opt.value = z.fee;
+    opt.textContent = `${z.name} - Fee: ${z.fee}`;
+    deliveryZoneSelect.appendChild(opt);
+  });
+}
+
+// --- Checkout ---
+checkoutBtn.addEventListener("click", ()=>{
+  const customerName = document.getElementById("customer-name").value;
+  const phone = document.getElementById("customer-phone").value;
+  const address = document.getElementById("customer-address").value;
+  const deliveryFee = parseInt(deliveryZoneSelect.value);
+  if(!customerName || !phone || !address){
+    alert("Please fill in all fields!");
+    return;
+  }
+
+  // Send order via EmailJS (if implemented)
+  alert("Order placed successfully! Total with delivery: "+(getCartTotal()+deliveryFee));
+
+  cart = [];
+  localStorage.setItem("cart", JSON.stringify(cart));
+  renderCart();
+});
+
+function getCartTotal(){
+  return cart.reduce((sum, item)=>sum+item.price*item.qty,0);
+}
+
+// --- Initialize ---
+initStore();
