@@ -1,57 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Panel</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <h1>Admin Panel</h1>
 
-<h1>Admin Panel</h1>
+  <section id="store-settings">
+    <h2>Store Settings</h2>
+    <input type="text" id="admin-store-name" placeholder="Store Name">
+    <input type="color" id="admin-main-color" value="#FF5733">
+    <input type="color" id="admin-button-color" value="#33FF57">
+    <input type="file" id="admin-logo" accept="image/*">
+    <input type="text" id="admin-announcement" placeholder="Store Announcement">
+    <input type="email" id="admin-email" placeholder="Admin Email">
+    <input type="text" id="whatsapp-number" placeholder="WhatsApp Number">
+    <input type="text" id="bank-name" placeholder="Bank Name">
+    <input type="text" id="account-name" placeholder="Account Name">
+    <input type="text" id="account-number" placeholder="Account Number">
+    <button id="save-settings">Save Settings</button>
+  </section>
 
-<section>
-  <h2>Store Settings</h2>
-  <label>Store Name:</label>
-  <input type="text" id="admin-store-name">
-  <label>Store Announcement:</label>
-  <input type="text" id="admin-store-announcement">
-  <label>Store Logo:</label>
-  <input type="file" id="admin-store-logo" accept="image/*" capture="camera">
-  <label>Store Main Color:</label>
-  <input type="color" id="admin-store-color">
-  <label>Button Color:</label>
-  <input type="color" id="admin-button-color">
-  <label>WhatsApp Number:</label>
-  <input type="text" id="admin-whatsapp-number" placeholder="e.g., 2348012345678">
-  <button id="save-store-settings">Save</button>
-</section>
+  <section id="product-management">
+    <h2>Products</h2>
+    <input type="text" id="product-name" placeholder="Product Name">
+    <input type="number" id="product-original" placeholder="Original Cost (Naira)">
+    <input type="number" id="product-price" placeholder="Selling Price (Naira)">
+    <textarea id="product-colors" placeholder="Colors (one per line)"></textarea>
+    <textarea id="product-sizes" placeholder="Sizes (one per line)"></textarea>
+    <input type="file" id="product-image" accept="image/*" capture="camera">
+    <button id="add-product">Add Product</button>
+    <h3>Existing Products</h3>
+    <div id="existing-products"></div>
+  </section>
 
-<section>
-  <h2>Products</h2>
-  <label>Name:</label>
-  <input type="text" id="admin-product-name">
-  <label>Price:</label>
-  <input type="number" id="admin-product-price">
-  <label>Original Cost:</label>
-  <input type="number" id="admin-product-cost">
-  <label>Colors (each line):</label>
-  <textarea id="admin-product-colors" placeholder="One color per line"></textarea>
-  <label>Sizes (each line):</label>
-  <textarea id="admin-product-sizes" placeholder="One size per line"></textarea>
-  <label>Image:</label>
-  <input type="file" id="admin-product-image" accept="image/*" capture="camera">
-  <label>Collection:</label>
-  <input type="text" id="admin-product-collection">
-  <button id="add-product-btn">Add Product</button>
-  <div id="admin-products-list"></div>
-</section>
+  <section id="collection-management">
+    <h2>Collections</h2>
+    <select id="collection-select" multiple></select>
+    <button id="assign-collection">Assign to Collection</button>
+  </section>
 
-<section>
-  <h2>Assign Products to Collections</h2>
-  <div id="assign-collections-list"></div>
-</section>
+  <section id="orders-record">
+    <h2>Orders</h2>
+    <table id="orders-table">
+      <thead>
+        <tr>
+          <th>Customer</th>
+          <th>Product</th>
+          <th>Quantity</th>
+          <th>Amount</th>
+          <th>Original Cost</th>
+          <th>Profit</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </section>
 
-<script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
