@@ -1,329 +1,129 @@
-// ---------- STORE + ADMIN DATA ----------
-let products = JSON.parse(localStorage.getItem("products")) || [];
-let collections = JSON.parse(localStorage.getItem("collections")) || [];
-let orders = JSON.parse(localStorage.getItem("orders")) || [];
-let storeSettings = JSON.parse(localStorage.getItem("storeSettings")) || {
-  name: "My Store",
-  color: "#ff6600",
-  logo: "logo.png",
-  announcement: "Welcome to my store!"
-};
-let bankDetails = JSON.parse(localStorage.getItem("bankDetails")) || {
-  bankName: "",
-  accountName: "",
-  accountNumber: ""
-};
-let deliveryZones = JSON.parse(localStorage.getItem("deliveryZones")) || [];
+// STORAGE KEYS
+const STORE_KEY="storeData", PRODUCTS_KEY="productsData", COLLECTIONS_KEY="collectionsData";
+const ZONES_KEY="zonesData", CART_KEY="cartData", ORDERS_KEY="ordersData";
 
-// ---------- UTIL ----------
-function saveAll(){
-    localStorage.setItem("products", JSON.stringify(products));
-    localStorage.setItem("collections", JSON.stringify(collections));
-    localStorage.setItem("orders", JSON.stringify(orders));
-    localStorage.setItem("storeSettings", JSON.stringify(storeSettings));
-    localStorage.setItem("bankDetails", JSON.stringify(bankDetails));
-    localStorage.setItem("deliveryZones", JSON.stringify(deliveryZones));
-    renderStore();
-    renderAdminProducts();
-    renderCollections();
-    renderDeliveryZones();
-    renderStoreSettings();
-    renderBankDetails();
-    renderOrders();
+// EMAILJS
+const EMAILJS_PUBLIC_KEY="RN5H1CcY7Fqkakg5w";
+const EMAILJS_SERVICE_ID="service_opcf6cl";
+const EMAILJS_ADMIN_TEMPLATE="template_4zrsdni";
+const EMAILJS_CUSTOMER_TEMPLATE="template_zc87bdl";
+
+// LOCAL STORAGE HELPERS
+function load(key){return JSON.parse(localStorage.getItem(key)||"[]");}
+function save(key,data){localStorage.setItem(key,JSON.stringify(data));}
+
+// STORE SETTINGS
+function applyStoreSettings(){
+  const storeName=localStorage.getItem("storeName")||"My Store";
+  document.getElementById("store-name-display")?.innerText=storeName;
+  const announcement=localStorage.getItem("storeAnnouncement")||"Welcome to my store!";
+  document.getElementById("store-announcement")?.innerText=announcement;
+  const logo=localStorage.getItem("storeLogo");
+  if(logo) document.querySelector(".logo").src=logo;
+  document.documentElement.style.setProperty('--main-color',localStorage.getItem("storeMainColor")||"#ff0000");
+  document.documentElement.style.setProperty('--button-color',localStorage.getItem("storeButtonColor")||"#0000ff");
+  updateWhatsAppNumber();
 }
 
-// ---------- STORE RENDER ----------
+// WHATSAPP
+function updateWhatsAppNumber(){
+  const number=localStorage.getItem("whatsappNumber")||"2348000000000";
+  const link=`https://wa.me/${number.replace(/\D/g,"")}`;
+  const waIcon=document.getElementById("whatsapp-icon");
+  if(waIcon) waIcon.href=link;
+}
+
+// PRODUCTS
+let products=load(PRODUCTS_KEY);
+let cart=load(CART_KEY);
+let currentProductIndex=0;
+let currentQty=1;
+
+// RENDER STORE PRODUCTS
 function renderStore(){
-    // store name & color & logo
-    document.getElementById("store-name-display").innerText = storeSettings.name;
-    document.querySelector("header").style.backgroundColor = storeSettings.color;
-    document.querySelector(".logo").src = storeSettings.logo;
-    document.getElementById("store-announcement").innerText = storeSettings.announcement;
-
-    // collections filter
-    const collectionFilter = document.getElementById("collection-filter");
-    collectionFilter.innerHTML = '<option value="">All</option>';
-    collections.forEach(c=>{
-        let option = document.createElement("option");
-        option.value = c.name;
-        option.innerText = c.name;
-        collectionFilter.appendChild(option);
-    });
-
-    // products section
-    const section = document.getElementById("products-section");
-    section.innerHTML = "";
-    let selectedCollection = collectionFilter.value;
-    products.filter(p => !selectedCollection || p.collection === selectedCollection).forEach((p,index)=>{
-        const card = document.createElement("div");
-        card.className = "product-card";
-        card.innerHTML = `
-            <img src="${p.image}" alt="${p.name}">
-            <h4>${p.name}</h4>
-            <p>₦${p.price}</p>
-            <div>
-              <label>Color:</label>
-              <select id="color-${index}">${p.colors.map(c=>`<option>${c}</option>`).join("")}</select>
-            </div>
-            <div>
-              <label>Size:</label>
-              <select id="size-${index}">${p.sizes.map(s=>`<option>${s}</option>`).join("")}</select>
-            </div>
-            <div>
-              <button onclick="addToCart(${index},1)">Add +</button>
-              <button onclick="addToCart(${index},-1)">Remove -</button>
-            </div>
-        `;
-        section.appendChild(card);
-    });
+  const container=document.getElementById("products-section");
+  if(!container) return;
+  container.innerHTML="";
+  const selectedCollection=document.getElementById("collection-filter")?.value;
+  products.forEach((p,i)=>{
+    if(selectedCollection && p.collection!==selectedCollection) return;
+    const div=document.createElement("div"); div.className="product-card";
+    div.innerHTML=`<img src="${p.image}" alt="${p.name}"><h3>${p.name}</h3><p>₦${p.price}</p>`;
+    div.addEventListener("click",()=>openProductModal(i));
+    container.appendChild(div);
+  });
 }
 
-// ---------- CART ----------
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
-function addToCart(index,qty){
-    let product = products[index];
-    let cartItem = cart.find(c=>c.id===product.id && c.color===product.colors[0] && c.size===product.sizes[0]);
-    if(cartItem){
-        cartItem.qty += qty;
-        if(cartItem.qty<0) cartItem.qty=0;
-    }else if(qty>0){
-        cart.push({...product, qty: qty, color: product.colors[0], size: product.sizes[0]});
-    }
-    localStorage.setItem("cart", JSON.stringify(cart));
-    updateCartIcon();
+// PRODUCT MODAL
+function openProductModal(i){
+  currentProductIndex=i;
+  currentQty=1;
+  const p=products[i];
+  document.getElementById("modal-product-name").innerText=p.name;
+  document.getElementById("modal-product-image").src=p.image;
+  document.getElementById("modal-product-price").innerText=p.price;
+  document.getElementById("modal-colors").innerHTML=p.colors.map(c=>`<button class="color-btn">${c}</button>`).join(" ");
+  document.getElementById("modal-sizes").innerHTML=p.sizes.map(s=>`<button class="size-btn">${s}</button>`).join(" ");
+  document.getElementById("qty-value").innerText=currentQty;
+  document.getElementById("product-modal").style.display="block";
 }
 
-function updateCartIcon(){
-    document.getElementById("cart-count").innerText = cart.reduce((a,c)=>a+c.qty,0);
+// CART FUNCTIONS
+function renderCart(){
+  const container=document.getElementById("cart-items");
+  if(!container) return;
+  container.innerHTML="";
+  let total=0;
+  cart.forEach((item,i)=>{
+    total+=item.price*item.qty;
+    const div=document.createElement("div");
+    div.innerHTML=`${item.name} | ₦${item.price} x ${item.qty} 
+      <button onclick="updateQty(${i},-1)">−</button>
+      <button onclick="updateQty(${i},1)">+</button>
+      <button onclick="removeCartItem(${i})">Delete</button>`;
+    container.appendChild(div);
+  });
+  document.getElementById("cart-total").innerText=total;
+  document.getElementById("cart-count").innerText=cart.length;
 }
 
-// ---------- ADMIN RENDER ----------
-function renderAdminProducts(){
-    const adminDiv = document.getElementById("admin-products");
-    adminDiv.innerHTML = "";
-    products.forEach((p,i)=>{
-        const div = document.createElement("div");
-        div.innerHTML = `
-          <strong>${p.name}</strong> | ₦${p.price} | Original: ₦${p.original} | Gain: ₦${p.price - p.original}
-          <button onclick="editProduct(${i})">Edit</button>
-          <button onclick="deleteProduct(${i})">Delete</button>
-        `;
-        adminDiv.appendChild(div);
-    });
+function updateQty(i,change){
+  cart[i].qty+=change;
+  if(cart[i].qty<1) cart[i].qty=1;
+  save(CART_KEY,cart);
+  renderCart();
 }
 
-function addProductPrompt(){
-    let name = prompt("Product Name:");
-    let price = parseFloat(prompt("Selling Price (₦):"));
-    let original = parseFloat(prompt("Original Cost (₦):"));
-    let colors = prompt("Colors (comma separated):").split(",");
-    let sizes = prompt("Sizes (comma separated):").split(",");
-    let image = prompt("Image filename (e.g., product1.png):");
-    products.push({id: Date.now(),name,price,original,colors,sizes,image,collection:""});
-    saveAll();
+function removeCartItem(i){
+  cart.splice(i,1);
+  save(CART_KEY,cart);
+  renderCart();
 }
 
-function editProduct(index){
-    let p = products[index];
-    p.name = prompt("Product Name:",p.name);
-    p.price = parseFloat(prompt("Selling Price (₦):",p.price));
-    p.original = parseFloat(prompt("Original Cost (₦):",p.original));
-    p.colors = prompt("Colors (comma separated):",p.colors.join(",")).split(",");
-    p.sizes = prompt("Sizes (comma separated):",p.sizes.join(",")).split(",");
-    p.image = prompt("Image filename:",p.image);
-    saveAll();
-}
-
-function deleteProduct(index){
-    if(confirm("Delete this product?")){
-        products.splice(index,1);
-        saveAll();
-    }
-}
-
-// ---------- COLLECTIONS ----------
-function renderCollections(){
-    const div = document.getElementById("collection-products");
-    div.innerHTML="";
-    collections.forEach((c,i)=>{
-        const section = document.createElement("div");
-        section.innerHTML = `
-          <strong>${c.name}</strong>
-          <button onclick="editCollection(${i})">Edit</button>
-          <button onclick="deleteCollection(${i})">Delete</button>
-          <button onclick="assignToCollection(${i})">Assign Products</button>
-        `;
-        div.appendChild(section);
-    });
-}
-
-function addCollectionPrompt(){
-    let name = prompt("Collection Name:");
-    collections.push({id: Date.now(),name});
-    saveAll();
-}
-
-function editCollection(i){
-    collections[i].name = prompt("Collection Name:",collections[i].name);
-    saveAll();
-}
-
-function deleteCollection(i){
-    if(confirm("Delete this collection?")){
-        collections.splice(i,1);
-        saveAll();
-    }
-}
-
-function assignToCollection(i){
-    let col = collections[i];
-    let choices = products.map((p,index)=>`${index}: ${p.name} (Current: ${p.collection || "None"})`).join("\n");
-    let selection = prompt(`Assign products to collection ${col.name}:\n${choices}\nEnter comma separated product numbers`);
-    if(selection){
-        selection.split(",").map(s=>products[parseInt(s)]).forEach(p=>p.collection=col.name);
-        saveAll();
-    }
-}
-
-// ---------- STORE SETTINGS ----------
-function renderStoreSettings(){
-    document.getElementById("store-name").value = storeSettings.name;
-    document.getElementById("store-color").value = storeSettings.color;
-    document.getElementById("store-logo").value = storeSettings.logo;
-    document.getElementById("store-announcement-input").value = storeSettings.announcement;
-}
-
-function saveStoreSettings(){
-    storeSettings.name = document.getElementById("store-name").value;
-    storeSettings.color = document.getElementById("store-color").value;
-    storeSettings.logo = document.getElementById("store-logo").value;
-    storeSettings.announcement = document.getElementById("store-announcement-input").value;
-    saveAll();
-}
-
-// ---------- BANK DETAILS ----------
-function renderBankDetails(){
-    document.getElementById("bank-name").value = bankDetails.bankName;
-    document.getElementById("account-name").value = bankDetails.accountName;
-    document.getElementById("account-number").value = bankDetails.accountNumber;
-}
-
-function saveBankDetails(){
-    bankDetails.bankName = document.getElementById("bank-name").value;
-    bankDetails.accountName = document.getElementById("account-name").value;
-    bankDetails.accountNumber = document.getElementById("account-number").value;
-    saveAll();
-}
-
-// ---------- DELIVERY ZONES ----------
-function renderDeliveryZones(){
-    const div = document.getElementById("delivery-zones-list");
-    div.innerHTML="";
-    deliveryZones.forEach((d,i)=>{
-        const section = document.createElement("div");
-        section.innerHTML = `
-          <strong>${d.zone}</strong> | Fee: ₦${d.fee}
-          <button onclick="editDelivery(${i})">Edit</button>
-          <button onclick="deleteDelivery(${i})">Delete</button>
-        `;
-        div.appendChild(section);
-    });
-}
-
-function addDeliveryZonePrompt(){
-    let zone = prompt("Zone Name:");
-    let fee = parseFloat(prompt("Fee (₦):"));
-    deliveryZones.push({zone,fee});
-    saveAll();
-}
-
-function editDelivery(i){
-    deliveryZones[i].zone = prompt("Zone Name:",deliveryZones[i].zone);
-    deliveryZones[i].fee = parseFloat(prompt("Fee (₦):",deliveryZones[i].fee));
-    saveAll();
-}
-
-function deleteDelivery(i){
-    if(confirm("Delete this delivery zone?")){
-        deliveryZones.splice(i,1);
-        saveAll();
-    }
-}
-
-// ---------- ORDERS ----------
-function renderOrders(){
-    const div = document.getElementById("admin-orders");
-    div.innerHTML="";
-    orders.forEach((o,i)=>{
-        const section = document.createElement("div");
-        section.innerHTML = `
-          <strong>Order #${o.id}</strong> | Status: ${o.status} | Customer: ${o.name} | ₦${o.total}
-          <button onclick="updateOrderStatus(${i})">Change Status</button>
-        `;
-        div.appendChild(section);
-    });
-}
-
-function updateOrderStatus(i){
-    let status = prompt("Order Status (Pending, Successful, Cancelled):",orders[i].status);
-    if(status){
-        orders[i].status = status;
-        sendEmailNotification(orders[i]);
-        saveAll();
-    }
-}
-
-// ---------- EMAILJS ----------
-function sendEmailNotification(order){
-    // Admin email
-    emailjs.send('service_opcf6cl','template_4zrsdni',{
-        to_email: "admin@example.com",
-        customer_name: order.name,
-        customer_email: order.email,
-        order_id: order.id,
-        status: order.status,
-        total: order.total
-    });
-
-    // Customer email
-    emailjs.send('service_opcf6cl','template_zc87bdl',{
-        to_email: order.email,
-        customer_name: order.name,
-        order_id: order.id,
-        status: order.status,
-        total: order.total
-    });
-}
-
-// ---------- CART CHECKOUT ----------
-document.getElementById("checkout-btn").addEventListener("click",()=>{
-    const name = document.getElementById("customer-name").value;
-    const email = document.getElementById("customer-email").value;
-    const phone = document.getElementById("customer-phone").value;
-    const address = document.getElementById("customer-address").value;
-    const delivery = document.getElementById("delivery-zone").value;
-    if(!name || !email || !phone || !address){
-        alert("Please fill all details");
-        return;
-    }
-    let total = cart.reduce((a,c)=>a + c.price*c.qty,0);
-    let order = {
-        id: Date.now(),
-        items: [...cart],
-        name,email,phone,address,delivery,
-        status:"Pending",
-        total
-    };
-    orders.push(order);
-    cart = [];
-    localStorage.setItem("cart",JSON.stringify(cart));
-    updateCartIcon();
-    saveAll();
-    sendEmailNotification(order);
-    alert("Order placed!");
-    document.getElementById("cart-modal").style.display="none";
+// ADD TO CART
+document.getElementById("add-to-cart-btn")?.addEventListener("click",()=>{
+  const p=products[currentProductIndex];
+  let cartItem=cart.find(c=>c.name===p.name);
+  if(cartItem) cartItem.qty+=currentQty;
+  else cart.push({...p, qty:currentQty});
+  save(CART_KEY,cart);
+  renderCart();
+  document.getElementById("product-modal").style.display="none";
 });
 
-// ---------- INIT ----------
-saveAll();
-updateCartIcon();
+// CART MODAL
+document.getElementById("cart-icon")?.addEventListener("click",()=>{ document.getElementById("cart-modal").style.display="block"; });
+document.getElementById("close-cart")?.addEventListener("click",()=>{ document.getElementById("cart-modal").style.display="none"; });
+
+// PRODUCT MODAL CLOSE
+document.getElementById("close-product")?.addEventListener("click",()=>{ document.getElementById("product-modal").style.display="none"; });
+
+// QUANTITY IN MODAL
+document.getElementById("qty-plus")?.addEventListener("click",()=>{ currentQty++; document.getElementById("qty-value").innerText=currentQty; });
+document.getElementById("qty-minus")?.addEventListener("click",()=>{ if(currentQty>1) currentQty--; document.getElementById("qty-value").innerText=currentQty; });
+
+// FILTER COLLECTION
+document.getElementById("collection-filter")?.addEventListener("change",renderStore);
+
+// INIT
+applyStoreSettings(); renderStore(); renderCart();
