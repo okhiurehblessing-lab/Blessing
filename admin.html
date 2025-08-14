@@ -1,66 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Panel</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin • MyStore</title>
+<link rel="stylesheet" href="style.css">
+<!-- EmailJS (so you can test from admin if needed) -->
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+<script>
+  (function(){ emailjs.init("RN5H1CcY7Fqkakg5w"); })();
+</script>
 </head>
-<body>
+<body class="admin-body">
+
+<header class="admin-header">
   <h1>Admin Panel</h1>
+</header>
 
-  <section id="store-settings">
-    <h2>Store Settings</h2>
-    <input type="text" id="admin-store-name" placeholder="Store Name">
-    <input type="color" id="admin-main-color" value="#FF5733">
-    <input type="color" id="admin-button-color" value="#33FF57">
-    <input type="file" id="admin-logo" accept="image/*">
-    <input type="text" id="admin-announcement" placeholder="Store Announcement">
-    <input type="email" id="admin-email" placeholder="Admin Email">
-    <input type="text" id="whatsapp-number" placeholder="WhatsApp Number">
-    <input type="text" id="bank-name" placeholder="Bank Name">
-    <input type="text" id="account-name" placeholder="Account Name">
-    <input type="text" id="account-number" placeholder="Account Number">
-    <button id="save-settings">Save Settings</button>
+<nav class="admin-tabs">
+  <button data-tab="tab-products" class="tab-btn active">Products</button>
+  <button data-tab="tab-collections" class="tab-btn">Collections</button>
+  <button data-tab="tab-customize" class="tab-btn">Store Customization</button>
+  <button data-tab="tab-delivery" class="tab-btn">Delivery/Shipping</button>
+  <button data-tab="tab-bank" class="tab-btn">Bank Details</button>
+  <button data-tab="tab-email" class="tab-btn">Email & WhatsApp</button>
+  <button data-tab="tab-ann" class="tab-btn">Announcements</button>
+  <button data-tab="tab-orders" class="tab-btn">Orders & Gains</button>
+</nav>
+
+<main class="admin-main">
+  <!-- PRODUCTS -->
+  <section id="tab-products" class="admin-section">
+    <h2>Add / Edit Products</h2>
+    <div class="grid-2">
+      <div>
+        <label>Product Name <input id="p-name" type="text"></label>
+        <label>Selling Price (₦) <input id="p-price" type="number" min="0"></label>
+        <label>Original Cost (₦) <input id="p-original" type="number" min="0"></label>
+        <label>Colors (one per line)
+          <textarea id="p-colors" rows="4" placeholder="Red
+Blue
+Black"></textarea>
+        </label>
+        <label>Sizes (one per line)
+          <textarea id="p-sizes" rows="4" placeholder="S
+M
+L"></textarea>
+        </label>
+        <label>Images (camera / library / file)
+          <input id="p-images" type="file" accept="image/*" multiple capture="environment">
+        </label>
+        <label>Description
+          <textarea id="p-desc" rows="4" placeholder="Optional product description"></textarea>
+        </label>
+        <div class="actions">
+          <button id="save-product" class="primary-btn">Save Product</button>
+          <button id="reset-product" type="button">Reset</button>
+        </div>
+        <small id="edit-hint" class="muted hidden">Editing existing product… (saving will overwrite)</small>
+      </div>
+
+      <div>
+        <h3>Existing Products</h3>
+        <div id="admin-products-list" class="admin-list"></div>
+      </div>
+    </div>
   </section>
 
-  <section id="product-management">
-    <h2>Products</h2>
-    <input type="text" id="product-name" placeholder="Product Name">
-    <input type="number" id="product-original" placeholder="Original Cost (Naira)">
-    <input type="number" id="product-price" placeholder="Selling Price (Naira)">
-    <textarea id="product-colors" placeholder="Colors (one per line)"></textarea>
-    <textarea id="product-sizes" placeholder="Sizes (one per line)"></textarea>
-    <input type="file" id="product-image" accept="image/*" capture="camera">
-    <button id="add-product">Add Product</button>
-    <h3>Existing Products</h3>
-    <div id="existing-products"></div>
+  <!-- COLLECTIONS -->
+  <section id="tab-collections" class="admin-section hidden">
+    <h2>Assign Products to Collections</h2>
+    <div class="collection-create">
+      <input id="new-collection-name" type="text" placeholder="New collection name">
+      <button id="create-collection">Create</button>
+    </div>
+    <div id="collections-wrapper"></div>
   </section>
 
-  <section id="collection-management">
-    <h2>Collections</h2>
-    <select id="collection-select" multiple></select>
-    <button id="assign-collection">Assign to Collection</button>
+  <!-- CUSTOMIZATION -->
+  <section id="tab-customize" class="admin-section hidden">
+    <h2>Store Customization</h2>
+    <label>Store Name <input id="store-name-input" type="text" placeholder="MyStore"></label>
+    <label>Primary Color <input id="primary-color" type="color" value="#FF5722"></label>
+    <label>Button Color <input id="button-color" type="color" value="#FF9800"></label>
+    <label>Upload Logo <input id="logo-upload" type="file" accept="image/*" capture="environment"></label>
+    <div class="actions">
+      <button id="save-customize" class="primary-btn">Save Customization</button>
+    </div>
   </section>
 
-  <section id="orders-record">
-    <h2>Orders</h2>
-    <table id="orders-table">
-      <thead>
-        <tr>
-          <th>Customer</th>
-          <th>Product</th>
-          <th>Quantity</th>
-          <th>Amount</th>
-          <th>Original Cost</th>
-          <th>Profit</th>
-          <th>Status</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+  <!-- DELIVERY / SHIPPING -->
+  <section id="tab-delivery" class="admin-section hidden">
+    <h2>Delivery Zones & Fees</h2>
+    <p class="muted">Lagos zones + fees; set one flat fee for other states.</p>
+    <div id="zones-list" class="admin-list"></div>
+    <div class="grid-3">
+      <label>Zone Name <input id="zone-name" type="text" placeholder="Yaba / Ikeja / Lekki"></label>
+      <label>Fee (₦) <input id="zone-fee" type="number" min="0"></label>
+      <div class="actions">
+        <button id="add-zone">Add Zone</button>
+      </div>
+    </div>
+    <label>Other States Flat Fee (₦)
+      <input id="other-states-fee" type="number" min="0">
+    </label>
+    <div class="actions">
+      <button id="save-delivery" class="primary-btn">Save Delivery Settings</button>
+    </div>
   </section>
 
-  <script src="script.js"></script>
+  <!-- BANK -->
+  <section id="tab-bank" class="admin-section hidden">
+    <h2>Bank Details (shown to customers at checkout)</h2>
+    <label>Bank Name <input id="bank-name" type="text" placeholder="e.g. Access Bank"></label>
+    <label>Account Name <input id="account-name" type="text" placeholder="e.g. Adaeze Okoro"></label>
+    <label>Account Number <input id="account-number" type="text" placeholder="e.g. 0123456789"></label>
+    <div class="actions">
+      <button id="save-bank" class="primary-btn">Save Bank Details</button>
+    </div>
+  </section>
+
+  <!-- EMAIL / WHATSAPP -->
+  <section id="tab-email" class="admin-section hidden">
+    <h2>Email & WhatsApp</h2>
+    <label>Admin Email <input id="admin-email" type="email" placeholder="you@example.com"></label>
+    <label>Customer Email (optional default) <input id="customer-email" type="email"></label>
+    <label>WhatsApp Number (digits only, with country code) <input id="whatsapp-number" type="tel" placeholder="2348012345678"></label>
+    <p class="muted">WhatsApp icon shows automatically on the store after you save a number.</p>
+    <div class="actions">
+      <button id="save-comm" class="primary-btn">Save</button>
+    </div>
+  </section>
+
+  <!-- ANNOUNCEMENTS -->
+  <section id="tab-ann" class="admin-section hidden">
+    <h2>Store Announcements</h2>
+    <textarea id="ann-text" rows="5" placeholder="Type announcement text customers should see…"></textarea>
+    <div class="actions">
+      <button id="save-ann" class="primary-btn">Save Announcements</button>
+    </div>
+  </section>
+
+  <!-- ORDERS & GAINS -->
+  <section id="tab-orders" class="admin-section hidden">
+    <h2>Order Records & Gains</h2>
+    <div id="orders-list" class="admin-list"></div>
+    <div class="totals-row">
+      <div>Total Revenue: <strong id="total-revenue">₦0</strong></div>
+      <div>Total Cost: <strong id="total-cost">₦0</strong></div>
+      <div>Total Gain: <strong id="total-gain">₦0</strong></div>
+    </div>
+  </section>
+</main>
+
+<script src="script.js"></script>
 </body>
 </html>
