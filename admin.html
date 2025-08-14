@@ -14,6 +14,9 @@
 
 <section id="admin-controls">
 
+  <!-- General Save -->
+  <button onclick="saveAll()">💾 Save All Changes</button>
+
   <!-- Admin Email -->
   <h2>Admin Email for Notifications</h2>
   <input type="email" id="admin-email" placeholder="Your email for order notifications">
@@ -70,6 +73,10 @@
   <input type="number" id="product-price" placeholder="Selling Price">
   <input type="number" id="product-cost" placeholder="Original Cost">
   <input type="file" id="product-image-upload" accept="image/*">
+
+  <!-- Collections -->
+  <h3>Assign Collection</h3>
+  <input type="text" id="product-collection" placeholder="Collection Name">
 
   <h3>Available Colors</h3>
   <div id="color-list"></div>
