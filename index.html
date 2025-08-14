@@ -1,43 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your Store</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Essysessentials</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header>
-    <div class="logo" id="store-logo"></div>
-    <h1 id="store-name">Your Store Name</h1>
-    <div class="cart-icon" id="cart-icon">🛒 <span id="cart-count">0</span></div>
+  <!-- Header -->
+  <header class="header">
+    <img src="assets/logo.jpg" alt="Essysessentials Logo" class="logo" />
+    <h1>Essysessentials</h1>
   </header>
 
-  <input type="text" id="search-bar" placeholder="Search products...">
-
-  <div id="products-grid"></div>
-
-  <div id="cart-modal" class="modal">
-    <div class="modal-content">
-      <span class="close" id="close-cart">&times;</span>
-      <h2>Your Cart</h2>
-      <div id="cart-items"></div>
-      <div id="cart-total"></div>
-      <div>
-        <input type="text" id="delivery-address" placeholder="Enter delivery address">
-        <select id="delivery-method">
-          <option value="pickup">Pickup</option>
-          <option value="Lagos Mainland">Lagos Mainland</option>
-          <option value="Lagos Island">Lagos Island</option>
-          <option value="Outside Lagos">Outside Lagos</option>
-        </select>
+  <!-- Product Collections -->
+  <section class="collections">
+    <h2>Our Collections</h2>
+    <div class="product-grid">
+      <!-- Example product card -->
+      <div class="product-card" onclick="openProduct('Product Name', '₦5000', 'assets/placeholder.JPG', 'Available colors: Red, Black<br>Sizes: S, M, L')">
+        <img src="assets/placeholder.JPG" alt="Product Image" />
+        <h3>Product Name</h3>
+        <p class="price">₦5000</p>
       </div>
-      <button id="checkout-btn">Checkout</button>
+    </div>
+  </section>
+
+  <!-- Product Modal -->
+  <div id="productModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeModal()">&times;</span>
+      <img id="modalImage" src="" alt="Product Image" />
+      <h2 id="modalTitle"></h2>
+      <p id="modalPrice"></p>
+      <p id="modalDescription"></p>
+      <a id="whatsappLink" target="_blank">
+        <img src="assets/whatsapp.JPG" alt="WhatsApp" class="whatsapp-icon" />
+        Order on WhatsApp
+      </a>
     </div>
   </div>
 
-  <div class="whatsapp-icon" id="whatsapp-icon">💬</div>
+  <!-- Contact Form -->
+  <section class="contact">
+    <h2>Contact Us</h2>
+    <form id="contactForm">
+      <input type="text" id="name" placeholder="Your Name" required />
+      <input type="email" id="email" placeholder="Your Email" required />
+      <textarea id="message" placeholder="Your Message" required></textarea>
+      <button type="submit">Send Message</button>
+    </form>
+  </section>
 
-  <script src="script.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@2.6.4/dist/email.min.js"></script>
+  <script>
+    emailjs.init('YOUR_EMAILJS_USER_ID');
+
+    document.getElementById('contactForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {
+        from_name: document.getElementById("name").value,
+        from_email: document.getElementById("email").value,
+        message: document.getElementById("message").value
+      })
+      .then(function() {
+        alert("Message sent successfully!");
+      }, function(error) {
+        alert("Failed to send message. Error: " + JSON.stringify(error));
+      });
+    });
+
+    function openProduct(name, price, image, description) {
+      document.getElementById('modalTitle').innerText = name;
+      document.getElementById('modalPrice').innerText = price;
+      document.getElementById('modalImage').src = image;
+      document.getElementById('modalDescription').innerHTML = description;
+      document.getElementById('whatsappLink').href =
+        `https://wa.me/YOUR_PHONE_NUMBER?text=I'm interested in ${name} for ${price}`;
+      document.getElementById('productModal').style.display = 'block';
+    }
+
+    function closeModal() {
+      document.getElementById('productModal').style.display = 'none';
+    }
+  </script>
 </body>
 </html>
