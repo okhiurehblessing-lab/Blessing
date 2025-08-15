@@ -1,88 +1,132 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-page="store">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Essysessentials</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Essysessentials — Store</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- EmailJS (contact + order notifications) -->
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 </head>
 <body>
+  <!-- Announcement Bar (admin editable) -->
+  <div id="announceBar" class="announce-bar"></div>
+
   <!-- Header -->
-  <header class="header">
-    <img src="assets/logo.jpg" alt="Essysessentials Logo" class="logo" />
-    <h1>Essysessentials</h1>
+  <header class="store-header">
+    <a href="index.html" class="logo-wrap">
+      <img src="assets/logo.jpg" alt="Essysessentials Logo" class="store-logo" />
+    </a>
+    <h1 id="storeName" class="store-title">Essysessentials</h1>
   </header>
 
-  <!-- Product Collections -->
-  <section class="collections">
-    <h2>Our Collections</h2>
-    <div class="product-grid">
-      <!-- Example product card -->
-      <div class="product-card" onclick="openProduct('Product Name', '₦5000', 'assets/placeholder.JPG', 'Available colors: Red, Black<br>Sizes: S, M, L')">
-        <img src="assets/placeholder.JPG" alt="Product Image" />
-        <h3>Product Name</h3>
-        <p class="price">₦5000</p>
-      </div>
-    </div>
+  <!-- Tools strip: search + collection filter + cart -->
+  <section class="toolbar">
+    <input id="searchInput" class="search-input" type="search" placeholder="Search products…" />
+    <select id="collectionFilter" class="collection-filter">
+      <option value="">All collections</option>
+    </select>
+
+    <button id="cartButton" class="icon-btn cart-btn" aria-label="Cart">
+      <span class="cart-emoji">🛒</span>
+      <span id="cartCount" class="cart-count">0</span>
+    </button>
   </section>
 
-  <!-- Product Modal -->
-  <div id="productModal" class="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal()">&times;</span>
-      <img id="modalImage" src="" alt="Product Image" />
-      <h2 id="modalTitle"></h2>
-      <p id="modalPrice"></p>
-      <p id="modalDescription"></p>
-      <a id="whatsappLink" target="_blank">
-        <img src="assets/whatsapp.JPG" alt="WhatsApp" class="whatsapp-icon" />
-        Order on WhatsApp
-      </a>
+  <!-- Product Grid -->
+  <main class="grid-wrap">
+    <div id="productGrid" class="product-grid"></div>
+  </main>
+
+  <!-- Product Modal (details) -->
+  <div id="productModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card">
+      <button class="close-x" id="closeProductModal">×</button>
+      <div class="modal-image">
+        <img id="pmImage" src="assets/placeholder.jpg" alt="Product" />
+      </div>
+      <div class="modal-body">
+        <h2 id="pmName"></h2>
+        <p id="pmPrice" class="pm-price"></p>
+        <p id="pmDesc" class="pm-desc"></p>
+
+        <div id="pmOptions" class="pm-options"></div>
+
+        <div class="qty-row">
+          <button id="pmMinus" class="qty-btn">−</button>
+          <input id="pmQty" class="qty-input" type="number" min="1" value="1" />
+          <button id="pmPlus" class="qty-btn">+</button>
+        </div>
+
+        <button id="pmAddToCart" class="btn primary">Add to cart</button>
+      </div>
     </div>
   </div>
 
-  <!-- Contact Form -->
+  <!-- Cart Drawer -->
+  <aside id="cartDrawer" class="cart-drawer">
+    <div class="cart-head">
+      <h3>Cart</h3>
+      <button id="closeCart" class="close-x">×</button>
+    </div>
+    <div id="cartList" class="cart-list"></div>
+
+    <div class="cart-summary">
+      <div class="row"><span>Subtotal</span><span id="cartSubtotal">₦0</span></div>
+
+      <!-- Delivery method + address -->
+      <div class="checkout-block">
+        <label class="lbl">Delivery method</label>
+        <select id="deliveryMethod">
+          <option value="pickup">Pickup (₦0)</option>
+          <option value="lagos">Delivery in Lagos</option>
+          <option value="outside">Outside Lagos</option>
+        </select>
+
+        <div id="lagosZoneWrap" class="hidden">
+          <label class="lbl">Select Lagos zone</label>
+          <select id="lagosZone"></select>
+        </div>
+
+        <div id="addressWrap" class="hidden">
+          <label class="lbl">Delivery address</label>
+          <textarea id="deliveryAddress" rows="3" placeholder="House number, street, city…"></textarea>
+        </div>
+      </div>
+
+      <div class="row"><span>Shipping</span><span id="cartShipping">₦0</span></div>
+      <div class="row total"><span>Total</span><span id="cartTotal">₦0</span></div>
+    </div>
+
+    <div class="checkout-form">
+      <input id="custName" type="text" placeholder="Your name" />
+      <input id="custEmail" type="email" placeholder="Your email" />
+      <input id="custPhone" type="tel" placeholder="Your phone" />
+      <button id="placeOrder" class="btn primary">Place order</button>
+      <div id="bankNote" class="bank-note"></div>
+    </div>
+  </aside>
+
+  <!-- Contact Us (you said you liked this section) -->
   <section class="contact">
     <h2>Contact Us</h2>
     <form id="contactForm">
-      <input type="text" id="name" placeholder="Your Name" required />
-      <input type="email" id="email" placeholder="Your Email" required />
-      <textarea id="message" placeholder="Your Message" required></textarea>
-      <button type="submit">Send Message</button>
+      <input type="text" id="cuName" placeholder="Your Name" required />
+      <input type="email" id="cuEmail" placeholder="Your Email" required />
+      <textarea id="cuMsg" placeholder="Your Message" required></textarea>
+      <button type="submit" class="btn">Send Message</button>
     </form>
   </section>
 
-  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@2.6.4/dist/email.min.js"></script>
+  <!-- Floating WhatsApp -->
+  <a id="waLink" class="wa-fab" href="#" target="_blank" aria-label="Chat on WhatsApp">
+    <img src="assets/whatsapp.jpg" alt="WhatsApp" />
+  </a>
+
+  <script src="script.js"></script>
   <script>
-    emailjs.init('YOUR_EMAILJS_USER_ID');
-
-    document.getElementById('contactForm').addEventListener('submit', function(event) {
-      event.preventDefault();
-      emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {
-        from_name: document.getElementById("name").value,
-        from_email: document.getElementById("email").value,
-        message: document.getElementById("message").value
-      })
-      .then(function() {
-        alert("Message sent successfully!");
-      }, function(error) {
-        alert("Failed to send message. Error: " + JSON.stringify(error));
-      });
-    });
-
-    function openProduct(name, price, image, description) {
-      document.getElementById('modalTitle').innerText = name;
-      document.getElementById('modalPrice').innerText = price;
-      document.getElementById('modalImage').src = image;
-      document.getElementById('modalDescription').innerHTML = description;
-      document.getElementById('whatsappLink').href =
-        `https://wa.me/YOUR_PHONE_NUMBER?text=I'm interested in ${name} for ${price}`;
-      document.getElementById('productModal').style.display = 'block';
-    }
-
-    function closeModal() {
-      document.getElementById('productModal').style.display = 'none';
-    }
+    // Initialize EmailJS
+    (function(){ emailjs.init('RN5H1CcY7Fqkakg5w'); })();
   </script>
 </body>
 </html>
