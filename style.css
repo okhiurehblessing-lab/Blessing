@@ -148,3 +148,12 @@ body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-se
 .settings-head{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)}
 .settings-section{padding:12px;border-bottom:1px solid var(--line)}
 .settings-actions{padding:12px}
+
+/* Overlay for settings */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:79}
+.hidden{display:none!important}
+
+/* Out of stock badge + disabled add button */
+.img-wrap{position:relative}
+.out-badge{position:absolute;left:8px;top:8px;background:#ff3b30;color:#fff;padding:6px 8px;border-radius:8px;font-size:.78rem}
+.add-btn[disabled]{opacity:.55;cursor:not-allowed}
