@@ -5,22 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Essysessentials — Store</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- EmailJS (contact + order notifications) -->
   <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 </head>
 <body>
-  <!-- Announcement Bar (admin editable) -->
+  <!-- Announcement Bar -->
   <div id="announceBar" class="announce-bar"></div>
 
   <!-- Header -->
   <header class="store-header">
-    <a href="index.html" class="logo-wrap">
+    <a href="index.html" class="logo-wrap" aria-label="Home">
       <img src="assets/logo.jpg" alt="Essysessentials Logo" class="store-logo" />
     </a>
     <h1 id="storeName" class="store-title">Essysessentials</h1>
   </header>
 
-  <!-- Tools strip: search + collection filter + cart -->
+  <!-- Toolbar: search + filter + cart -->
   <section class="toolbar">
     <input id="searchInput" class="search-input" type="search" placeholder="Search products…" />
     <select id="collectionFilter" class="collection-filter">
@@ -38,7 +37,7 @@
     <div id="productGrid" class="product-grid"></div>
   </main>
 
-  <!-- Product Modal (details) -->
+  <!-- Product Modal -->
   <div id="productModal" class="modal hidden" aria-hidden="true">
     <div class="modal-card">
       <button class="close-x" id="closeProductModal">×</button>
@@ -64,7 +63,7 @@
   </div>
 
   <!-- Cart Drawer -->
-  <aside id="cartDrawer" class="cart-drawer">
+  <aside id="cartDrawer" class="cart-drawer" aria-hidden="true">
     <div class="cart-head">
       <h3>Cart</h3>
       <button id="closeCart" class="close-x">×</button>
@@ -74,7 +73,6 @@
     <div class="cart-summary">
       <div class="row"><span>Subtotal</span><span id="cartSubtotal">₦0</span></div>
 
-      <!-- Delivery method + address -->
       <div class="checkout-block">
         <label class="lbl">Delivery method</label>
         <select id="deliveryMethod">
@@ -107,7 +105,7 @@
     </div>
   </aside>
 
-  <!-- Contact Us (you said you liked this section) -->
+  <!-- Contact Us -->
   <section class="contact">
     <h2>Contact Us</h2>
     <form id="contactForm">
@@ -125,7 +123,6 @@
 
   <script src="script.js"></script>
   <script>
-    // Initialize EmailJS
     (function(){ emailjs.init('RN5H1CcY7Fqkakg5w'); })();
   </script>
 </body>
