@@ -57,7 +57,6 @@ function saveAll(){
 const ₦ = n => "₦" + (Number(n||0)).toLocaleString();
 
 function dataURLFromFiles(files){
-  // return Promise<string[]> of dataURLs
   const arr = Array.from(files || []);
   return Promise.all(arr.map(file => new Promise(res=>{
     const r=new FileReader();
@@ -80,13 +79,12 @@ function applyThemeLive(){
 function initStore(){
   applyThemeLive();
 
-  // Announcement + branding
   const bar = document.getElementById("announceBar");
   if(bar){ bar.textContent = settings.announcementText; }
+
   const sname = document.getElementById("storeName");
   if(sname){ sname.textContent = settings.storeName; }
 
-  // WhatsApp link
   const wa = document.getElementById("waLink");
   if(wa){
     const num = (settings.whatsapp || "").replace(/\D/g,"");
@@ -96,7 +94,6 @@ function initStore(){
   // Search + filter
   const filter = document.getElementById("collectionFilter");
   if(filter){
-    // Populate collections
     filter.innerHTML = `<option value="">All collections</option>` + 
       collections.filter(c=>c.id!=="all").map(c=>`<option value="${c.id}">${c.name}</option>`).join("");
     filter.addEventListener("change", renderGrid);
@@ -104,7 +101,7 @@ function initStore(){
   const search = document.getElementById("searchInput");
   if(search){ search.addEventListener("input", renderGrid); }
 
-  // Product modal
+  // Product modal wiring
   document.getElementById("closeProductModal")?.addEventListener("click", closeProductModal);
   document.getElementById("pmMinus")?.addEventListener("click", ()=> {
     const q = document.getElementById("pmQty");
@@ -128,10 +125,9 @@ function initStore(){
     zoneSel.addEventListener("change", updateCartSummary);
   }
 
-  // Render
   updateCartBadge();
   renderGrid();
-  renderCart(); // so drawer shows "empty" correctly
+  renderCart();
   updateCartSummary();
   updateBankNote();
 }
@@ -151,13 +147,34 @@ function renderGrid(){
 
   grid.innerHTML = filtered.map(p => {
     const img = (p.images && p.images[0]) || "assets/placeholder.jpg";
+    const out = (Number(p.stock||0) === 0);
+    const inCart = cart.find(ci=>ci.productId===p.id);
+    const badge = out ? '<span class="badge out-badge">Out of stock</span>' : '';
+
+    // if in cart, show qty controls on card
+    let actionHtml = '';
+    if(inCart){
+      actionHtml = `
+        <div class="card-qty">
+          <button class="qty-btn card-minus" data-id="${p.id}">−</button>
+          <span class="qv">${inCart.qty}</span>
+          <button class="qty-btn card-plus" data-id="${p.id}">+</button>
+        </div>
+      `;
+    } else {
+      actionHtml = `<button class="btn primary add-btn" data-id="${p.id}" ${out ? 'disabled' : ''}>Add to cart</button>`;
+    }
+
     return `
       <div class="card product-card" data-id="${p.id}">
-        <img src="${img}" alt="${p.name}">
+        <div class="img-wrap">
+          <img src="${img}" alt="${p.name}">
+          ${badge}
+        </div>
         <div class="pd">
           <p class="p-name">${p.name}</p>
           <p class="p-price">${₦(p.price)}</p>
-          <button class="btn primary add-btn" data-id="${p.id}">Add to cart</button>
+          ${actionHtml}
         </div>
       </div>
     `;
@@ -166,17 +183,41 @@ function renderGrid(){
   // Click handlers
   grid.querySelectorAll(".product-card").forEach(card=>{
     card.addEventListener("click", (e)=>{
-      // If clicking "Add to cart" inside card, don't open modal twice
-      if(e.target.classList.contains("add-btn")) return;
+      if(e.target.classList.contains("add-btn") || e.target.classList.contains("card-minus") || e.target.classList.contains("card-plus")) return;
       const id = card.getAttribute("data-id");
       openProductModal(id);
     });
   });
+
   grid.querySelectorAll(".add-btn").forEach(btn=>{
     btn.addEventListener("click",(e)=>{
       e.stopPropagation();
       const id = btn.getAttribute("data-id");
       addToCart(id, 1);
+    });
+  });
+
+  grid.querySelectorAll(".card-minus").forEach(b=>{
+    b.addEventListener("click",(e)=>{
+      e.stopPropagation();
+      const id = b.getAttribute("data-id");
+      const item = cart.find(c=>c.productId===id);
+      if(!item) return;
+      item.qty = Math.max(0, item.qty - 1);
+      if(item.qty === 0) cart = cart.filter(c=>c.productId!==id);
+      DB.set("cart", cart);
+      updateCartBadge(); renderGrid(); renderCart(); updateCartSummary();
+    });
+  });
+  grid.querySelectorAll(".card-plus").forEach(b=>{
+    b.addEventListener("click",(e)=>{
+      e.stopPropagation();
+      const id = b.getAttribute("data-id");
+      const item = cart.find(c=>c.productId===id);
+      if(item){ item.qty +=1; }
+      else { cart.push({productId:id, qty:1}); }
+      DB.set("cart", cart);
+      updateCartBadge(); renderGrid(); renderCart(); updateCartSummary();
     });
   });
 }
@@ -199,9 +240,7 @@ function openProductModal(id){
     row.innerHTML = `<div class="lbl">Colors</div>`;
     p.colors.forEach(c=>{
       const b = document.createElement("button");
-      b.type="button";
-      b.className="opt";
-      b.textContent=c;
+      b.type="button"; b.className="opt"; b.textContent=c;
       b.addEventListener("click", ()=> {
         row.querySelectorAll(".opt").forEach(o=>o.classList.remove("active"));
         b.classList.add("active");
@@ -216,9 +255,7 @@ function openProductModal(id){
     row.innerHTML = `<div class="lbl">Sizes</div>`;
     p.sizes.forEach(s=>{
       const b = document.createElement("button");
-      b.type="button";
-      b.className="opt";
-      b.textContent=s;
+      b.type="button"; b.className="opt"; b.textContent=s;
       b.addEventListener("click", ()=> {
         row.querySelectorAll(".opt").forEach(o=>o.classList.remove("active"));
         b.classList.add("active");
@@ -230,11 +267,19 @@ function openProductModal(id){
   }
 
   document.getElementById("pmQty").value = 1;
-  document.getElementById("pmAddToCart").onclick = ()=>{
-    const qty = Number(document.getElementById("pmQty").value||1);
-    addToCart(id, qty);
-    closeProductModal();
-  };
+  const pmAdd = document.getElementById('pmAddToCart');
+  if(Number(p.stock||0) === 0){
+    pmAdd.disabled = true;
+    pmAdd.textContent = 'Out of stock';
+  } else {
+    pmAdd.disabled = false;
+    pmAdd.textContent = 'Add to cart';
+    pmAdd.onclick = ()=>{
+      const qty = Number(document.getElementById("pmQty").value||1);
+      addToCart(id, qty);
+      closeProductModal();
+    };
+  }
 
   const modal = document.getElementById("productModal");
   modal.classList.remove("hidden");
@@ -265,17 +310,35 @@ function updateCartBadge(){
   if(badge) badge.textContent = count;
 }
 
-function openCart(){ document.getElementById("cartDrawer")?.classList.add("open"); }
-function closeCart(){ document.getElementById("cartDrawer")?.classList.remove("open"); }
+function openCart(){ 
+  const d = document.getElementById("cartDrawer");
+  if(d) d.classList.add("open");
+}
+function closeCart(){ 
+  const d = document.getElementById("cartDrawer");
+  if(d) d.classList.remove("open");
+}
 
 function renderCart(){
   const wrap = document.getElementById("cartList");
   if(!wrap) return;
   if(!cart.length){
-    wrap.innerHTML = `<p>Your cart is empty.</p>`;
+    wrap.innerHTML = `
+      <div class="empty">
+        <p>Your cart is currently empty.</p>
+        <div style="text-align:center;margin-top:12px;">
+          <button id="returnShop" class="btn">Return to shop</button>
+        </div>
+      </div>
+    `;
+    document.getElementById("returnShop")?.addEventListener("click", ()=>{
+      closeCart();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
     updateCartSummary();
     return;
   }
+
   wrap.innerHTML = cart.map(ci=>{
     const p = products.find(x=>x.id===ci.productId);
     if(!p) return "";
@@ -304,14 +367,14 @@ function renderCart(){
       item.qty = Math.max(0, item.qty - 1);
       if(item.qty===0){ cart = cart.filter(c=>c.productId!==id); }
       DB.set("cart", cart);
-      updateCartBadge(); renderCart(); updateCartSummary();
+      updateCartBadge(); renderGrid(); renderCart(); updateCartSummary();
     });
     row.querySelector(".plus").addEventListener("click",()=>{
       const item = cart.find(c=>c.productId===id);
       if(!item) return;
       item.qty += 1;
       DB.set("cart", cart);
-      updateCartBadge(); renderCart(); updateCartSummary();
+      updateCartBadge(); renderGrid(); renderCart(); updateCartSummary();
     });
   });
 }
@@ -378,25 +441,21 @@ async function placeOrder(){
 
   if(!name || !email || !phone){ alert("Please fill your name, email and phone."); return; }
 
-  // compute totals
   const subtotal = calcSubtotal();
   const shipping = calcShipping();
   const total = subtotal + shipping;
 
-  // details
   const itemsDetail = cart.map(ci=>{
     const p = products.find(x=>x.id===ci.productId);
     return `${p?.name} x${ci.qty} — ${₦(p?.price)}`;
   }).join("\n");
 
-  // gain = Σ (price - cost)*qty
   const gain = cart.reduce((g,ci)=>{
     const p = products.find(x=>x.id===ci.productId);
     const profitUnit = Number(p?.price||0) - Number(p?.cost||0);
     return g + (profitUnit * ci.qty);
   },0);
 
-  // Persist order
   const order = {
     id: "ord_" + Date.now(),
     date: new Date().toISOString(),
@@ -411,9 +470,7 @@ async function placeOrder(){
   orders.unshift(order);
   DB.set("orders", orders);
 
-  // Send emails
   try{
-    // Admin email
     if(settings.adminEmail){
       await emailjs.send("service_opcf6cl", "template_4zrsdni", {
         to_email: settings.adminEmail,
@@ -421,7 +478,6 @@ async function placeOrder(){
         message: `Customer: ${name}\nPhone: ${phone}\nEmail: ${email}\nMethod: ${method}\nAddress: ${address}\n\nItems:\n${itemsDetail}\n\nSubtotal: ${₦(subtotal)}\nShipping: ${₦(shipping)}\nTotal: ${₦(total)}\nGain: ${₦(gain)}`
       });
     }
-    // Customer email
     await emailjs.send("service_opcf6cl", "template_zc87bdl", {
       to_email: email,
       subject: `Your order — ${order.id}`,
@@ -431,13 +487,10 @@ async function placeOrder(){
     console.warn("EmailJS error", e);
   }
 
-  // Clear cart
   cart = [];
   DB.set("cart", cart);
-  updateCartBadge(); renderCart(); updateCartSummary();
+  updateCartBadge(); renderGrid(); renderCart(); updateCartSummary();
   alert("Order placed! Check your email.");
-
-  // reflect in admin stats if open
 }
 
 /***********************
@@ -446,15 +499,23 @@ async function placeOrder(){
 function initAdmin(){
   applyThemeLive();
 
-  // Brand
   document.getElementById("adminStoreName").textContent = settings.storeName;
 
-  // Settings panel
   const panel = document.getElementById("settingsPanel");
-  document.getElementById("openSettings")?.addEventListener("click", ()=>panel.classList.add("open"));
-  document.getElementById("closeSettings")?.addEventListener("click", ()=>panel.classList.remove("open"));
+  document.getElementById("openSettings")?.addEventListener("click", ()=>{
+    panel.classList.add("open");
+    document.getElementById("settingsOverlay").classList.remove("hidden");
+  });
+  document.getElementById("closeSettings")?.addEventListener("click", ()=>{
+    panel.classList.remove("open");
+    document.getElementById("settingsOverlay").classList.add("hidden");
+  });
+  document.getElementById("settingsOverlay")?.addEventListener("click", ()=>{
+    panel.classList.remove("open");
+    document.getElementById("settingsOverlay").classList.add("hidden");
+  });
+  document.addEventListener("keydown",(e)=>{ if(e.key==="Escape"){ panel.classList.remove("open"); document.getElementById("settingsOverlay").classList.add("hidden"); }});
 
-  // Prefill settings
   setVal("setStoreName", settings.storeName);
   setVal("setAnnouncement", settings.announcementText);
   setVal("setAnnBg", settings.announcementBg);
@@ -471,12 +532,10 @@ function initAdmin(){
   setVal("setOutsideFee", settings.shipping.outsideLagosFee);
   setVal("setPickupNote", settings.shipping.pickupNote);
 
-  // Zones list
   renderZones();
 
-  // Live updates (apply instantly)
   onInput("setStoreName", v=>{ settings.storeName=v; DB.set("settings",settings); document.getElementById("adminStoreName").textContent=v; });
-  onInput("setAnnouncement", v=>{ settings.announcementText=v; DB.set("settings",settings); });
+  onInput("setAnnouncement", v=>{ settings.announcementText=v; DB.set("settings",settings); document.getElementById("announceBar").textContent=v; });
   onInput("setAnnBg", v=>{ settings.announcementBg=v; DB.set("settings",settings); applyThemeLive(); });
   onInput("setAnnText", v=>{ settings.announcementTextColor=v; DB.set("settings",settings); applyThemeLive(); });
   onInput("setBg", v=>{ settings.theme.bg=v; DB.set("settings",settings); applyThemeLive(); });
@@ -485,13 +544,14 @@ function initAdmin(){
   onInput("setAdminEmail", v=>{ settings.adminEmail=v; DB.set("settings",settings); });
   onInput("setStoreEmail", v=>{ settings.storeEmail=v; DB.set("settings",settings); });
   onInput("setWhatsapp", v=>{ settings.whatsapp=v; DB.set("settings",settings); });
-  onInput("setBankName", v=>{ settings.bank.bankName=v; DB.set("settings",settings); });
-  onInput("setAccountName", v=>{ settings.bank.accountName=v; DB.set("settings",settings); });
-  onInput("setAccountNumber", v=>{ settings.bank.accountNumber=v; DB.set("settings",settings); });
+
+  onInput("setBankName", v=>{ settings.bank.bankName=v; DB.set("settings",settings); updateBankNote(); });
+  onInput("setAccountName", v=>{ settings.bank.accountName=v; DB.set("settings",settings); updateBankNote(); });
+  onInput("setAccountNumber", v=>{ settings.bank.accountNumber=v; DB.set("settings",settings); updateBankNote(); });
+
   onInput("setOutsideFee", v=>{ settings.shipping.outsideLagosFee=Number(v||0); DB.set("settings",settings); updateZonesEverywhere(); });
   onInput("setPickupNote", v=>{ settings.shipping.pickupNote=v; DB.set("settings",settings); });
 
-  // Add / remove Lagos zones
   document.getElementById("addZone").addEventListener("click", ()=>{
     const name = document.getElementById("zoneName").value.trim();
     const fee  = Number(document.getElementById("zoneFee").value||0);
@@ -504,11 +564,8 @@ function initAdmin(){
     updateZonesEverywhere();
   });
 
-  // Dashboard numbers + orders
   renderStats();
   renderOrdersTable();
-
-  // Collections
   renderCollectionsUI();
 
   document.getElementById("addCollection").addEventListener("click", ()=>{
@@ -522,7 +579,6 @@ function initAdmin(){
     refreshProductCollectionSelects();
   });
 
-  // Products
   document.getElementById("toggleAddProduct").addEventListener("click", ()=>{
     document.getElementById("productForm").classList.toggle("hidden");
     resetProductForm();
@@ -552,6 +608,7 @@ function initAdmin(){
     const name = document.getElementById("pName").value.trim();
     const price = Number(document.getElementById("pPrice").value||0);
     const cost  = Number(document.getElementById("pCost").value||0);
+    const stock = Number(document.getElementById("pStock").value||0);
     const desc  = document.getElementById("pDesc").value;
     const coll  = document.getElementById("pCollection").value || "";
     const colors = readChips("colorList");
@@ -561,13 +618,14 @@ function initAdmin(){
 
     const existing = products.find(x=>x.id===id);
     if(existing){
-      existing.name=name; existing.price=price; existing.cost=cost;
+      existing.name=name; existing.price=price; existing.cost=cost; existing.stock=stock;
       existing.description=desc; existing.collectionId=coll;
       existing.colors=colors; existing.sizes=sizes;
       if(imgs.length){ existing.images = imgs; }
     }else{
       products.unshift({
-        id, name, price, cost, description:desc,
+        id, name, price, cost, stock,
+        description:desc,
         collectionId: coll || "",
         colors, sizes,
         images: imgs.length? imgs : []
@@ -578,6 +636,7 @@ function initAdmin(){
     renderProductsList();
     refreshAssignProducts();
     refreshProductCollectionSelects();
+    renderStats();
   });
 
   renderProductsList();
@@ -605,7 +664,6 @@ function renderZones(){
   });
 }
 function updateZonesEverywhere(){
-  // Store side dropdown (if open)
   const zsel = document.getElementById("lagosZone");
   if(zsel){
     zsel.innerHTML = settings.shipping.zones.map((z,i)=>`<option value="${i}">${z.name} (${₦(z.fee)})</option>`).join("");
@@ -665,7 +723,7 @@ function renderOrdersTable(){
 
 /*** products UI ***/
 function resetProductForm(){
-  ["pName","pPrice","pCost","pDesc","editId"].forEach(id=>setVal(id,""));
+  ["pName","pPrice","pCost","pDesc","editId","pStock"].forEach(id=>setVal(id,""));
   document.getElementById("pImages").value="";
   document.getElementById("colorList").innerHTML="";
   document.getElementById("sizeList").innerHTML="";
@@ -694,7 +752,7 @@ function renderProductsList(){
         <img src="${img}" alt="${p.name}">
         <div>
           <div style="font-weight:700">${p.name}</div>
-          <div class="ci-meta">${₦(p.price)} · Cost ${₦(p.cost||0)} · Collection: ${col}</div>
+          <div class="ci-meta">${₦(p.price)} · Cost ${₦(p.cost||0)} · Stock: ${p.stock||0} · Collection: ${col}</div>
         </div>
         <div>
           <button class="btn small edit">Edit</button>
@@ -714,6 +772,7 @@ function renderProductsList(){
       setVal("pName", p.name);
       setVal("pPrice", p.price);
       setVal("pCost", p.cost);
+      setVal("pStock", p.stock);
       setVal("pDesc", p.description||"");
       setVal("pCollection", p.collectionId || "");
       document.getElementById("colorList").innerHTML="";
@@ -741,7 +800,6 @@ function renderCollectionsUI(){
     `<span class="pill">${c.name}</span>`
   ).join("");
 
-  // Assignment dropdown
   const sel = document.getElementById("assignCollectionSelect");
   sel.innerHTML = collections.filter(c=>c.id!=="all").map(c=>`<option value="${c.id}">${c.name}</option>`).join("");
 
@@ -752,7 +810,6 @@ function refreshAssignProducts(){
   const box = document.getElementById("assignProducts");
   box.innerHTML = products.map(p=>{
     const img = (p.images && p.images[0]) || "assets/placeholder.jpg";
-    const checked = ""; // decide at assign time
     return `
       <label class="assign-item">
         <input type="checkbox" class="assChk" value="${p.id}" />
@@ -795,7 +852,6 @@ function refreshProductCollectionSelects(){
     if(!n || !em || !m) return;
 
     try{
-      // Send to store email if provided, else to admin email
       const to = settings.storeEmail || settings.adminEmail;
       if(to){
         await emailjs.send("service_opcf6cl", "template_4zrsdni", {
@@ -820,10 +876,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   const page = document.documentElement.getAttribute("data-page");
   applyThemeLive();
 
-  // Put announcement in store if present
   if(page==="store"){
-    const bar = document.getElementById("announceBar");
-    if(bar) bar.textContent = settings.announcementText;
     initStore();
   }
   if(page==="admin"){
