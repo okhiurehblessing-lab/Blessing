@@ -3,17 +3,24 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Essysessentials — Store</title>
+  <title>Essysessentials — Shop</title>
+
+  <!-- styles + script (script.js will be provided next) -->
   <link rel="stylesheet" href="styles.css" />
   <script defer type="module" src="script.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 </head>
 <body data-page="store">
-  <div id="announcementBar" class="announcement"></div>
 
+  <!-- Announcement banner (bold inside shop) -->
+  <div id="announcementBanner" class="announcement-banner" role="region" aria-live="polite">
+    <!-- Filled from JS (admin text) -->
+  </div>
+
+  <!-- Header -->
   <header class="header">
     <div class="brand">
-      <img id="storeLogo" class="logo" src="assets/logo.jpg" alt="logo" />
+      <img id="storeLogo" class="logo" src="assets/logo.jpg" alt="Essysessentials logo" />
       <div class="brand-text">
         <div id="storeName" class="store-name">Essysessentials</div>
         <div id="storeTag" class="muted">Quality essentials for everyday</div>
@@ -21,82 +28,128 @@
     </div>
 
     <div class="header-actions">
-      <input id="searchInput" class="search" type="search" placeholder="Search products..." />
-      <select id="collectionFilter" class="select">
-        <option value="">All categories</option>
-      </select>
-      <button id="cartBtn" class="icon-btn" aria-label="Cart">🛒 <span id="cartCount" class="badge">0</span></button>
+      <div class="left-actions">
+        <button id="accountBtn" class="icon-btn account" aria-label="Account">👤</button>
+      </div>
+
+      <div class="search-area">
+        <input id="searchInput" class="search" type="search" placeholder="Search products..." aria-label="Search products" />
+      </div>
+
+      <div class="right-actions">
+        <select id="collectionFilter" class="select" aria-label="Browse collections">
+          <option value="">All collections</option>
+        </select>
+
+        <button id="cartBtn" class="icon-btn" aria-label="Cart">
+          🛒 <span id="cartCount" class="badge">0</span>
+        </button>
+      </div>
     </div>
   </header>
 
+  <!-- Main content -->
   <main class="container">
-    <section id="productsGrid" class="grid"></section>
+    <!-- Collections browse list (clickable) -->
+    <section id="collectionsList" class="collections">
+      <!-- Filled by script.js -->
+    </section>
+
+    <!-- Announcement (bold in page; same as banner but larger) -->
+    <section id="announcementBlock" class="announcement-block">
+      <!-- JS fills this -->
+    </section>
+
+    <!-- Products grid -->
+    <section id="productsGrid" class="grid" aria-live="polite">
+      <!-- Product cards inserted by script.js -->
+    </section>
   </main>
 
-  <!-- Product details modal -->
+  <!-- Product modal (carousel left/right, thumbs, options) -->
   <dialog id="productModal" class="modal">
     <form method="dialog" class="modal-card" id="productModalForm">
-      <button class="close" value="close" aria-label="Close">✕</button>
+      <button class="close" value="close" aria-label="Close product">✕</button>
+
       <div class="modal-body">
         <div class="modal-media">
-          <img id="pmImage" class="modal-image" alt="product image" src="assets/placeholder.jpg"/>
-          <div id="pmThumbs" class="thumbs"></div>
+          <div class="carousel">
+            <button id="pmPrev" class="carousel-btn" type="button" aria-label="Previous image">‹</button>
+            <img id="pmImage" class="modal-image" alt="Product image" src="assets/placeholder.jpg" />
+            <button id="pmNext" class="carousel-btn" type="button" aria-label="Next image">›</button>
+          </div>
+          <div id="pmThumbs" class="thumbs" aria-hidden="false"></div>
         </div>
+
         <div class="modal-info">
           <h3 id="pmName"></h3>
           <div id="pmPrice" class="price"></div>
           <p id="pmDesc"></p>
           <div id="pmStockWrap" class="stock-wrap"></div>
 
-          <div id="pmColors" class="options"></div>
-          <div id="pmSizes" class="options"></div>
+          <div id="pmColors" class="options" aria-label="Colors"></div>
+          <div id="pmSizes" class="options" aria-label="Sizes"></div>
 
           <div class="qty-row">
-            <button type="button" class="qty-btn" data-action="dec">−</button>
-            <input id="pmQty" class="qty" type="number" min="1" value="1" />
-            <button type="button" class="qty-btn" data-action="inc">+</button>
+            <button type="button" class="qty-btn" data-action="dec" aria-label="Decrease">−</button>
+            <input id="pmQty" class="qty" type="number" min="1" value="1" aria-label="Quantity" />
+            <button type="button" class="qty-btn" data-action="inc" aria-label="Increase">+</button>
           </div>
 
-          <button type="button" id="pmAddToCart" class="btn primary">Add to cart</button>
+          <div class="row" style="gap:8px">
+            <button id="pmAddToCart" type="button" class="btn primary">Add to cart</button>
+            <button id="pmBuyNow" type="button" class="btn">Buy now</button>
+          </div>
         </div>
       </div>
     </form>
   </dialog>
 
-  <!-- Cart modal (always opens) -->
-  <dialog id="cartModal" class="modal">
+  <!-- Toast (added to cart confirmations etc.) -->
+  <div id="toast" class="toast" aria-live="polite" role="status"></div>
+
+  <!-- Cart Modal -->
+  <dialog id="cartModal" class="modal large">
     <form method="dialog" class="modal-card">
-      <button class="close" value="close" aria-label="Close">✕</button>
+      <button class="close" value="close" aria-label="Close cart">✕</button>
       <h3>Your cart</h3>
+
       <div id="cartItems" class="cart-items"></div>
+
       <div id="cartEmpty" class="empty">
         <p>Your cart is currently empty</p>
         <button id="returnToShop" class="btn">Return to shop</button>
       </div>
 
-      <div class="cart-summary">
-        <div class="row"><span>Subtotal:</span><strong id="cartSubtotal">₦0</strong></div>
-        <div class="row actions">
-          <button id="continueShopping" type="button" class="btn">Continue shopping</button>
-          <button id="proceedToCheckout" type="button" class="btn primary">Proceed to Checkout</button>
+      <div class="cart-actions">
+        <div class="row">
+          <button id="clearCartBtn" type="button" class="btn subtle">Clear cart</button>
+          <div class="summary">
+            <div class="row"><span>Subtotal</span><strong id="cartSubtotal">₦0</strong></div>
+            <div style="margin-top:10px" class="row">
+              <button id="continueShopping" type="button" class="btn">Continue shopping</button>
+              <button id="proceedToCheckout" type="button" class="btn primary">Proceed to Checkout</button>
+            </div>
+          </div>
         </div>
       </div>
     </form>
   </dialog>
 
-  <!-- Checkout page-style dialog (scrollable, larger) -->
-  <dialog id="checkoutModal" class="modal large">
+  <!-- Checkout Modal (spacious, scrollable) -->
+  <dialog id="checkoutModal" class="modal large scrollable">
     <form id="checkoutForm" class="modal-card" method="dialog">
-      <button class="close" value="close" aria-label="Close">✕</button>
+      <button class="close" value="close" aria-label="Close checkout">✕</button>
       <button id="backToCart" type="button" class="btn subtle">← Back to cart</button>
 
       <h3>Checkout</h3>
+
       <section class="checkout-section">
         <h4>Customer details</h4>
         <input required name="name" placeholder="Full name" />
         <input required name="email" type="email" placeholder="Email" />
         <input required name="phone" placeholder="Phone number" />
-        <textarea required name="address" placeholder="Delivery address (Street, City, State, Country)"></textarea>
+        <textarea required name="address" placeholder="Delivery address (Street, City, State)"></textarea>
       </section>
 
       <section class="checkout-section">
@@ -111,6 +164,10 @@
       <section class="checkout-section" id="paymentSection">
         <h4>Payment</h4>
         <div id="bankDetails" class="bank"></div>
+        <div class="row" style="gap:8px;align-items:center">
+          <input id="bankAccountNumber" readonly />
+          <button id="copyAccountBtn" type="button" class="btn">Copy account</button>
+        </div>
         <label>Upload payment proof (required unless Address not listed or Stockpile)</label>
         <input id="paymentProofInput" type="file" accept="image/*" />
       </section>
@@ -119,11 +176,33 @@
         <div class="row"><span>Subtotal:</span><strong id="summarySubtotal">₦0</strong></div>
         <div class="row"><span>Shipping:</span><strong id="summaryShipping">₦0</strong></div>
         <div class="row total"><span>Total:</span><strong id="summaryTotal">₦0</strong></div>
-        <button id="placeOrderBtn" type="submit" class="btn primary">Place order</button>
+        <div style="margin-top:12px">
+          <button id="placeOrderBtn" type="submit" class="btn primary">Place order</button>
+        </div>
       </section>
     </form>
   </dialog>
 
+  <!-- Announcement popup (shows once per visit like Bumpa) -->
+  <dialog id="popupModal" class="modal small">
+    <form id="popupForm" method="dialog" class="modal-card">
+      <button class="close" value="close" aria-label="Close popup">✕</button>
+      <h3 id="popupTitle">Announcement</h3>
+      <p id="popupBody">This is an important message</p>
+
+      <div id="popupFormFields" class="popup-fields">
+        <input id="popupName" name="popupName" placeholder="Full name" />
+        <input id="popupEmail" name="popupEmail" type="email" placeholder="Email address" />
+        <input id="popupPhone" name="popupPhone" placeholder="Phone (optional)" />
+        <div style="margin-top:8px">
+          <button id="popupSubmit" type="button" class="btn primary">Sign Up</button>
+          <button id="popupSkip" type="button" class="btn subtle">Skip</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Footer -->
   <footer class="footer">
     <div class="contact">
       <h4>Contact us</h4>
@@ -133,9 +212,19 @@
     <small>© <span id="year"></span> <span id="footerStoreName">Essysessentials</span>. All rights reserved.</small>
   </footer>
 
+  <!-- WhatsApp floating icon bottom-right -->
   <a id="waFloat" class="wa-float" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
     <img src="assets/whatsapp.jpg" alt="WhatsApp" />
   </a>
+
+  <!-- small account menu (hidden, toggled by account button) -->
+  <div id="accountMenu" class="account-menu" hidden>
+    <div id="accountMenuInner">
+      <button id="loginBtn" class="btn">Login</button>
+      <button id="signupBtn" class="btn">Create account</button>
+      <button id="ordersLink" class="btn">My orders</button>
+    </div>
+  </div>
 
 </body>
 </html>
