@@ -1,885 +1,819 @@
-/***********************
- * Minimal persistent DB
- ***********************/
-const DB = {
-  get(key, fallback) {
-    try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
-    catch { return fallback; }
-  },
-  set(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
-  }
+// ========== Firebase (your config) ==========
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, getDocs, getDoc, doc, updateDoc, deleteDoc, setDoc, onSnapshot, serverTimestamp, query, orderBy
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+
+// YOUR latest config (as you sent)
+const firebaseConfig = {
+  apiKey: "AIzaSyBkQ5oE3LaiFGa2ir98MKjZzJ_ZTWQ08Cc",
+  authDomain: "myshop-store-bbb1b.firebaseapp.com",
+  projectId: "myshop-store-bbb1b",
+  storageBucket: "myshop-store-bbb1b.firebasestorage.app",
+  messagingSenderId: "292866448884",
+  appId: "1:292866448884:web:899267f534f8344b086da1"
+};
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ========== EmailJS (your keys) ==========
+window.emailjs?.init("RN5H1CcY7Fqkakg5w"); // public key
+const EMAILJS = {
+  service: "service_opcf6cl",
+  adminTemplate: "template_4zrsdni",
+  customerTemplate: "template_zc87bdl",
 };
 
-// Defaults
-const defaults = {
-  settings: {
-    storeName: "Essysessentials",
-    announcementText: "Welcome to Essysessentials — Free delivery on orders over ₦10,000!",
-    announcementBg: "#fffbe6",
-    announcementTextColor: "#111",
-    theme: { bg:"#ffffff", btn:"#111", btnText:"#ffffff", accent:"#25d366" },
-    whatsapp: "2348012345678",
-    adminEmail: "",
-    storeEmail: "",
-    bank: { bankName:"", accountName:"", accountNumber:"" },
-    shipping: {
-      outsideLagosFee: 3000,
-      pickupNote: "",
-      zones: [ {name:"Mainland", fee:1500}, {name:"Island", fee:2000} ]
-    }
-  },
-  collections: [
-    {id: "all", name:"All"},
-  ],
+// ========== Cloudinary (your details) ==========
+const CLOUD = { name: "desbqctik", preset: "myshop_preset" };
+
+// ========== Helpers ==========
+const N = (s)=>document.querySelector(s);
+const A = (s)=>document.querySelectorAll(s);
+const money = (n)=>"₦"+(Number(n||0)).toLocaleString();
+const uid = ()=>Math.random().toString(36).slice(2);
+const ls = {
+  get:(k,def)=>{try{return JSON.parse(localStorage.getItem(k))??def}catch{return def}},
+  set:(k,v)=>localStorage.setItem(k,JSON.stringify(v))
+};
+
+// ========== Shared state ==========
+const state = {
+  settings: null,
   products: [],
-  orders: [],
-  cart: []
+  collections: [],
+  cart: ls.get("cart", []),
+  zones: [],
 };
 
-let settings = DB.get("settings", defaults.settings);
-let collections = DB.get("collections", defaults.collections);
-let products = DB.get("products", defaults.products);
-let orders = DB.get("orders", defaults.orders);
-let cart = DB.get("cart", defaults.cart);
-
-function saveAll(){
-  DB.set("settings", settings);
-  DB.set("collections", collections);
-  DB.set("products", products);
-  DB.set("orders", orders);
-  DB.set("cart", cart);
+// ========== Live theme apply ==========
+function applyTheme(theme){
+  if(!theme) return;
+  document.documentElement.style.setProperty('--bg', theme.bg || '#ffffff');
+  document.documentElement.style.setProperty('--text', theme.text || '#111111');
+  document.documentElement.style.setProperty('--btn', theme.button || '#111111');
+  document.documentElement.style.setProperty('--btn-text', theme.buttonText || '#ffffff');
 }
 
-/***********************
- * Helpers
- ***********************/
-const ₦ = n => "₦" + (Number(n||0)).toLocaleString();
+// ========== Firestore: Settings doc ==========
+const settingsRef = doc(db, "settings", "store");
 
-function dataURLFromFiles(files){
-  const arr = Array.from(files || []);
-  return Promise.all(arr.map(file => new Promise(res=>{
-    const r=new FileReader();
-    r.onload=()=>res(r.result);
-    r.readAsDataURL(file);
-  })));
-}
-
-function applyThemeLive(){
-  document.documentElement.style.setProperty("--bg", settings.theme.bg);
-  document.documentElement.style.setProperty("--btn", settings.theme.btn);
-  document.documentElement.style.setProperty("--btnText", settings.theme.btnText);
-  document.documentElement.style.setProperty("--annBg", settings.announcementBg);
-  document.documentElement.style.setProperty("--annText", settings.announcementTextColor);
-}
-
-/***********************
- * STORE PAGE
- ***********************/
-function initStore(){
-  applyThemeLive();
-
-  const bar = document.getElementById("announceBar");
-  if(bar){ bar.textContent = settings.announcementText; }
-
-  const sname = document.getElementById("storeName");
-  if(sname){ sname.textContent = settings.storeName; }
-
-  const wa = document.getElementById("waLink");
-  if(wa){
-    const num = (settings.whatsapp || "").replace(/\D/g,"");
-    wa.href = num ? `https://wa.me/${num}` : "#";
-  }
-
-  // Search + filter
-  const filter = document.getElementById("collectionFilter");
-  if(filter){
-    filter.innerHTML = `<option value="">All collections</option>` + 
-      collections.filter(c=>c.id!=="all").map(c=>`<option value="${c.id}">${c.name}</option>`).join("");
-    filter.addEventListener("change", renderGrid);
-  }
-  const search = document.getElementById("searchInput");
-  if(search){ search.addEventListener("input", renderGrid); }
-
-  // Product modal wiring
-  document.getElementById("closeProductModal")?.addEventListener("click", closeProductModal);
-  document.getElementById("pmMinus")?.addEventListener("click", ()=> {
-    const q = document.getElementById("pmQty");
-    q.value = Math.max(1, Number(q.value||1)-1);
-  });
-  document.getElementById("pmPlus")?.addEventListener("click", ()=> {
-    const q = document.getElementById("pmQty");
-    q.value = Number(q.value||1)+1;
-  });
-
-  // Cart drawer
-  document.getElementById("cartButton")?.addEventListener("click", openCart);
-  document.getElementById("closeCart")?.addEventListener("click", closeCart);
-  document.getElementById("placeOrder")?.addEventListener("click", placeOrder);
-  document.getElementById("deliveryMethod")?.addEventListener("change", onDeliveryChange);
-
-  // Lagos zones
-  const zoneSel = document.getElementById("lagosZone");
-  if(zoneSel){
-    zoneSel.innerHTML = settings.shipping.zones.map((z,i)=>`<option value="${i}">${z.name} (${₦(z.fee)})</option>`).join("");
-    zoneSel.addEventListener("change", updateCartSummary);
-  }
-
-  updateCartBadge();
-  renderGrid();
-  renderCart();
-  updateCartSummary();
-  updateBankNote();
-}
-
-function renderGrid(){
-  const grid = document.getElementById("productGrid");
-  if(!grid) return;
-
-  const term = (document.getElementById("searchInput")?.value || "").toLowerCase();
-  const col = document.getElementById("collectionFilter")?.value || "";
-
-  const filtered = products.filter(p => {
-    const inCol = col ? (p.collectionId === col) : true;
-    const inSearch = !term || (p.name?.toLowerCase().includes(term) || p.description?.toLowerCase().includes(term));
-    return inCol && inSearch;
-  });
-
-  grid.innerHTML = filtered.map(p => {
-    const img = (p.images && p.images[0]) || "assets/placeholder.jpg";
-    const out = (Number(p.stock||0) === 0);
-    const inCart = cart.find(ci=>ci.productId===p.id);
-    const badge = out ? '<span class="badge out-badge">Out of stock</span>' : '';
-
-    // if in cart, show qty controls on card
-    let actionHtml = '';
-    if(inCart){
-      actionHtml = `
-        <div class="card-qty">
-          <button class="qty-btn card-minus" data-id="${p.id}">−</button>
-          <span class="qv">${inCart.qty}</span>
-          <button class="qty-btn card-plus" data-id="${p.id}">+</button>
-        </div>
-      `;
-    } else {
-      actionHtml = `<button class="btn primary add-btn" data-id="${p.id}" ${out ? 'disabled' : ''}>Add to cart</button>`;
-    }
-
-    return `
-      <div class="card product-card" data-id="${p.id}">
-        <div class="img-wrap">
-          <img src="${img}" alt="${p.name}">
-          ${badge}
-        </div>
-        <div class="pd">
-          <p class="p-name">${p.name}</p>
-          <p class="p-price">${₦(p.price)}</p>
-          ${actionHtml}
-        </div>
-      </div>
-    `;
-  }).join("");
-
-  // Click handlers
-  grid.querySelectorAll(".product-card").forEach(card=>{
-    card.addEventListener("click", (e)=>{
-      if(e.target.classList.contains("add-btn") || e.target.classList.contains("card-minus") || e.target.classList.contains("card-plus")) return;
-      const id = card.getAttribute("data-id");
-      openProductModal(id);
-    });
-  });
-
-  grid.querySelectorAll(".add-btn").forEach(btn=>{
-    btn.addEventListener("click",(e)=>{
-      e.stopPropagation();
-      const id = btn.getAttribute("data-id");
-      addToCart(id, 1);
-    });
-  });
-
-  grid.querySelectorAll(".card-minus").forEach(b=>{
-    b.addEventListener("click",(e)=>{
-      e.stopPropagation();
-      const id = b.getAttribute("data-id");
-      const item = cart.find(c=>c.productId===id);
-      if(!item) return;
-      item.qty = Math.max(0, item.qty - 1);
-      if(item.qty === 0) cart = cart.filter(c=>c.productId!==id);
-      DB.set("cart", cart);
-      updateCartBadge(); renderGrid(); renderCart(); updateCartSummary();
-    });
-  });
-  grid.querySelectorAll(".card-plus").forEach(b=>{
-    b.addEventListener("click",(e)=>{
-      e.stopPropagation();
-      const id = b.getAttribute("data-id");
-      const item = cart.find(c=>c.productId===id);
-      if(item){ item.qty +=1; }
-      else { cart.push({productId:id, qty:1}); }
-      DB.set("cart", cart);
-      updateCartBadge(); renderGrid(); renderCart(); updateCartSummary();
-    });
-  });
-}
-
-let currentProductId = null;
-function openProductModal(id){
-  const p = products.find(x=>x.id===id);
-  if(!p) return;
-  currentProductId = id;
-
-  document.getElementById("pmImage").src = (p.images && p.images[0]) || "assets/placeholder.jpg";
-  document.getElementById("pmName").textContent = p.name;
-  document.getElementById("pmPrice").textContent = ₦(p.price);
-  document.getElementById("pmDesc").textContent = p.description || "";
-
-  const opts = document.getElementById("pmOptions");
-  opts.innerHTML = "";
-  if (p.colors?.length){
-    const row = document.createElement("div");
-    row.innerHTML = `<div class="lbl">Colors</div>`;
-    p.colors.forEach(c=>{
-      const b = document.createElement("button");
-      b.type="button"; b.className="opt"; b.textContent=c;
-      b.addEventListener("click", ()=> {
-        row.querySelectorAll(".opt").forEach(o=>o.classList.remove("active"));
-        b.classList.add("active");
-        row.setAttribute("data-value", c);
-      });
-      row.appendChild(b);
-    });
-    opts.appendChild(row);
-  }
-  if (p.sizes?.length){
-    const row = document.createElement("div");
-    row.innerHTML = `<div class="lbl">Sizes</div>`;
-    p.sizes.forEach(s=>{
-      const b = document.createElement("button");
-      b.type="button"; b.className="opt"; b.textContent=s;
-      b.addEventListener("click", ()=> {
-        row.querySelectorAll(".opt").forEach(o=>o.classList.remove("active"));
-        b.classList.add("active");
-        row.setAttribute("data-value", s);
-      });
-      row.appendChild(b);
-    });
-    opts.appendChild(row);
-  }
-
-  document.getElementById("pmQty").value = 1;
-  const pmAdd = document.getElementById('pmAddToCart');
-  if(Number(p.stock||0) === 0){
-    pmAdd.disabled = true;
-    pmAdd.textContent = 'Out of stock';
-  } else {
-    pmAdd.disabled = false;
-    pmAdd.textContent = 'Add to cart';
-    pmAdd.onclick = ()=>{
-      const qty = Number(document.getElementById("pmQty").value||1);
-      addToCart(id, qty);
-      closeProductModal();
+// Bootstrap default settings if missing
+async function ensureSettings(){
+  const snap = await getDoc(settingsRef);
+  if(!snap.exists()){
+    const def = {
+      storeName: "Essysessentials",
+      tagline: "Quality essentials for everyday",
+      announcement: "Welcome to Essysessentials 💛",
+      contactEmail: "",
+      contactPhone: "",
+      whatsapp: "",
+      logoUrl: "assets/logo.jpg",
+      theme: { bg:"#ffffff", text:"#111111", button:"#111111", buttonText:"#ffffff" },
+      bank: { accountName:"", accountNumber:"", bankName:"" },
+      shippingZones: [{name:"Lagos Mainland", fee:1500}, {name:"Lagos Island", fee:2000}, {name:"Outside Lagos", fee:3500}],
+      shippingNotes: {
+        standard:"Delivered in 2–5 days within Lagos.",
+        express:"Delivered in 24–48 hours (extra fees may apply).",
+        pickup:"We’ll share pickup point after order.",
+        address_not_listed:"Provide details in notes; we’ll contact you.",
+        stockpile:"We’ll keep your items until you’re ready. Pay later."
+      },
+      updatedAt: serverTimestamp()
     };
+    await setDoc(settingsRef, def);
+    return def;
   }
-
-  const modal = document.getElementById("productModal");
-  modal.classList.remove("hidden");
-  modal.setAttribute("aria-hidden","false");
+  return snap.data();
 }
 
-function closeProductModal(){
-  const modal = document.getElementById("productModal");
-  modal.classList.add("hidden");
-  modal.setAttribute("aria-hidden","true");
+// ========== Products ==========
+const productsCol = collection(db, "products");
+const ordersCol   = collection(db, "orders");
+
+// ========== Cloudinary Upload ==========
+async function uploadToCloudinary(file){
+  const form = new FormData();
+  form.append("file", file);
+  form.append("upload_preset", CLOUD.preset);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD.name}/image/upload`, { method:"POST", body:form });
+  const data = await res.json();
+  if(!data.secure_url) throw new Error("Upload failed");
+  return data.secure_url;
 }
 
-function addToCart(productId, qty){
-  qty = Number(qty||1);
-  const exist = cart.find(ci=>ci.productId===productId);
-  if(exist){ exist.qty += qty; }
-  else { cart.push({productId, qty}); }
-  DB.set("cart", cart);
-  updateCartBadge();
-  openCart();
-  renderCart();
-  updateCartSummary();
-}
-
-function updateCartBadge(){
-  const count = cart.reduce((a,c)=>a+c.qty,0);
-  const badge = document.getElementById("cartCount");
-  if(badge) badge.textContent = count;
-}
-
-function openCart(){ 
-  const d = document.getElementById("cartDrawer");
-  if(d) d.classList.add("open");
-}
-function closeCart(){ 
-  const d = document.getElementById("cartDrawer");
-  if(d) d.classList.remove("open");
-}
-
-function renderCart(){
-  const wrap = document.getElementById("cartList");
-  if(!wrap) return;
-  if(!cart.length){
-    wrap.innerHTML = `
-      <div class="empty">
-        <p>Your cart is currently empty.</p>
-        <div style="text-align:center;margin-top:12px;">
-          <button id="returnShop" class="btn">Return to shop</button>
-        </div>
-      </div>
-    `;
-    document.getElementById("returnShop")?.addEventListener("click", ()=>{
-      closeCart();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+// ========== CART ==========
+function saveCart(){ ls.set("cart", state.cart); updateCartBadge(); }
+function updateCartBadge(){ const el=N("#cartCount"); if(el) el.textContent = state.cart.reduce((a,c)=>a+c.qty,0); }
+function addToCart(prod, opts){
+  if(prod.stock<=0){ alert("Out of stock"); return; }
+  const key = `${prod.id}|${opts.color||""}|${opts.size||""}`;
+  const idx = state.cart.findIndex(i=>i.key===key);
+  if(idx>-1){ state.cart[idx].qty += opts.qty||1; }
+  else{
+    state.cart.push({
+      key, id: prod.id, name: prod.name, price: prod.price,
+      color: opts.color||null, size: opts.size||null,
+      image: (prod.images?.[0]) || "", qty: opts.qty||1
     });
-    updateCartSummary();
-    return;
   }
+  saveCart();
+}
 
-  wrap.innerHTML = cart.map(ci=>{
-    const p = products.find(x=>x.id===ci.productId);
-    if(!p) return "";
-    const img = (p.images && p.images[0]) || "assets/placeholder.jpg";
-    return `
-      <div class="cart-item" data-id="${p.id}">
-        <img src="${img}" alt="${p.name}">
+// ========== STORE PAGE ==========
+async function initStore(){
+  // Load settings live
+  onSnapshot(settingsRef, (snap)=>{
+    state.settings = snap.data();
+    // Apply
+    applyTheme(state.settings?.theme);
+    N("#storeName").textContent = state.settings?.storeName || "Essysessentials";
+    N("#footerStoreName").textContent = state.settings?.storeName || "Essysessentials";
+    N("#storeTag").textContent = state.settings?.tagline || "";
+    N("#announcementBar").textContent = state.settings?.announcement || "";
+    N("#storeLogo").src = state.settings?.logoUrl || "assets/logo.jpg";
+    const w = state.settings?.whatsapp?.trim();
+    if(w){ N("#waFloat").href = `https://wa.me/${w}`; } else { N("#waFloat").style.display="none"; }
+    const email = state.settings?.contactEmail||""; const phone = state.settings?.contactPhone||"";
+    if(email){ N("#contactEmail").textContent=email; N("#contactEmail").href="mailto:"+email; }
+    if(phone){ N("#contactPhone").textContent=phone; N("#contactPhone").href="tel:"+phone; }
+
+    // Shipping zones & notes
+    state.zones = state.settings?.shippingZones||[];
+    const zoneSel = N("#shippingZone");
+    if(zoneSel){
+      zoneSel.innerHTML = "";
+      state.zones.forEach(z=>{
+        const op = document.createElement("option"); op.value=z.name; op.textContent=`${z.name} – ${money(z.fee)}`;
+        zoneSel.appendChild(op);
+      });
+    }
+    // notes
+    ["standard","express","pickup","address_not_listed","stockpile"].forEach(k=>{
+      const el = N(`#note-${k}`); if(el && state.settings?.shippingNotes?.[k]) el.textContent = state.settings.shippingNotes[k];
+    });
+  });
+
+  // Load products (live)
+  onSnapshot(query(productsCol, orderBy("createdAt","desc")), (snap)=>{
+    state.products = [];
+    const collections = new Set();
+    snap.forEach(d=>{
+      const p = { id:d.id, ...d.data() };
+      state.products.push(p);
+      if(p.collection) collections.add(p.collection);
+    });
+    state.collections = Array.from(collections);
+    renderFilters();
+    renderProducts(state.products);
+  });
+
+  // Search / filter
+  N("#searchInput").addEventListener("input", ()=>filterRender());
+  N("#collectionFilter").addEventListener("change", ()=>filterRender());
+
+  // Cart interactions
+  updateCartBadge();
+  N("#cartBtn").addEventListener("click", openCartModal);
+  N("#returnToShop").addEventListener("click", (e)=>{ e.preventDefault(); N("#cartModal").close(); });
+  N("#proceedToCheckout").addEventListener("click", openCheckout);
+
+  // Year
+  const year = new Date().getFullYear(); if(N("#year")) N("#year").textContent = year;
+}
+
+function renderFilters(){
+  const sel = N("#collectionFilter"); if(!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = `<option value="">All collections</option>`;
+  state.collections.forEach(c=>{
+    const o = document.createElement("option"); o.value=c; o.textContent=c; sel.appendChild(o);
+  });
+  sel.value = cur || "";
+}
+
+function filterRender(){
+  const q = N("#searchInput").value.toLowerCase().trim();
+  const c = N("#collectionFilter").value;
+  const list = state.products.filter(p=>{
+    const matchQ = !q || (p.name?.toLowerCase().includes(q) || p.description?.toLowerCase().includes(q));
+    const matchC = !c || p.collection===c;
+    return matchQ && matchC;
+  });
+  renderProducts(list);
+}
+
+function productCard(p){
+  const disabled = p.stock<=0;
+  return `
+    <article class="card product" data-id="${p.id}">
+      <div class="imgwrap">
+        ${disabled?`<span class="out">Out of stock</span>`:""}
+        <img src="${(p.images?.[0])||'assets/placeholder.jpg'}" alt="${p.name}" />
+      </div>
+      <h4>${p.name}</h4>
+      <div class="row">
+        <span class="price">${money(p.price)}</span>
+        <button class="btn add-btn" data-id="${p.id}" ${disabled?"disabled":""}>Add to cart</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderProducts(list){
+  const grid = N("#productsGrid");
+  grid.innerHTML = list.map(productCard).join("");
+
+  // Card click opens detail; "Add to cart" on card works too
+  grid.querySelectorAll(".product").forEach(card=>{
+    const id = card.dataset.id;
+    const p = state.products.find(x=>x.id===id);
+    // open details when image/name clicked
+    card.querySelector("img").addEventListener("click", ()=>openProductModal(p));
+    card.querySelector("h4").addEventListener("click", ()=>openProductModal(p));
+    // add to cart directly
+    const btn = card.querySelector(".add-btn");
+    if(btn){
+      btn.addEventListener("click",(e)=>{
+        e.stopPropagation();
+        addToCart(p,{qty:1});
+        alert("Added to cart");
+      });
+    }
+  });
+}
+
+function openProductModal(p){
+  const dlg = N("#productModal");
+  N("#pmName").textContent = p.name;
+  N("#pmPrice").textContent = money(p.price);
+  N("#pmDesc").textContent = p.description||"";
+  N("#pmImage").src = (p.images?.[0])||'assets/placeholder.jpg';
+  const thumbs = N("#pmThumbs");
+  thumbs.innerHTML = (p.images||[]).map(u=>`<img src="${u}"/>`).join("");
+  thumbs.querySelectorAll("img").forEach(img=>{
+    img.addEventListener("click",()=>{ N("#pmImage").src = img.src; });
+  });
+  const sw = N("#pmStockWrap");
+  sw.innerHTML = `<small class="muted">${p.stock>0?`In stock: ${p.stock}`:`Out of stock`}</small>`;
+
+  // Colors & Sizes
+  const colWrap = N("#pmColors"); colWrap.innerHTML="";
+  (p.colors||[]).forEach(c=>{
+    const b = document.createElement("button");
+    b.type="button"; b.className="opt"; b.textContent=c;
+    b.addEventListener("click",()=>{ colWrap.querySelectorAll(".opt").forEach(x=>x.classList.remove("active")); b.classList.add("active"); });
+    colWrap.appendChild(b);
+  });
+  const sizeWrap = N("#pmSizes"); sizeWrap.innerHTML="";
+  (p.sizes||[]).forEach(s=>{
+    const b = document.createElement("button");
+    b.type="button"; b.className="opt"; b.textContent=s;
+    b.addEventListener("click",()=>{ sizeWrap.querySelectorAll(".opt").forEach(x=>x.classList.remove("active")); b.classList.add("active"); });
+    sizeWrap.appendChild(b);
+  });
+
+  // Qty
+  const qtyEl = N("#pmQty"); qtyEl.value = 1;
+  A(".qty-btn").forEach(b=>{
+    b.onclick = ()=>{
+      const a = b.dataset.action;
+      let v = parseInt(qtyEl.value||"1",10);
+      if(a==="inc") v++;
+      if(a==="dec") v = Math.max(1, v-1);
+      qtyEl.value = v;
+    };
+  });
+
+  // Add to cart
+  const addBtn = N("#pmAddToCart");
+  addBtn.disabled = p.stock<=0;
+  addBtn.onclick = ()=>{
+    const color = colWrap.querySelector(".opt.active")?.textContent || null;
+    const size  = sizeWrap.querySelector(".opt.active")?.textContent || null;
+    const qty   = Math.max(1, parseInt(qtyEl.value||"1",10));
+    addToCart(p,{color,size,qty});
+    dlg.close();
+    openCartModal();
+  };
+
+  dlg.showModal();
+}
+
+function openCartModal(){
+  const dlg = N("#cartModal");
+  const wrap = N("#cartItems");
+  const empty = N("#cartEmpty");
+  wrap.innerHTML = "";
+  if(state.cart.length===0){
+    empty.style.display="block";
+  }else{
+    empty.style.display="none";
+    state.cart.forEach((it,idx)=>{
+      const row = document.createElement("div");
+      row.className="item";
+      row.innerHTML = `
+        <img src="${it.image||'assets/placeholder.jpg'}" alt="">
         <div>
-          <p class="ci-name">${p.name}</p>
-          <p class="ci-meta">${₦(p.price)}</p>
+          <div><strong>${it.name}</strong></div>
+          <small class="muted">${[it.color||"",it.size||""].filter(Boolean).join(" • ")}</small>
+          <div class="row" style="margin-top:6px">
+            <div>
+              <button class="icon-btn" data-a="dec">−</button>
+              <span style="padding:0 8px">${it.qty}</span>
+              <button class="icon-btn" data-a="inc">+</button>
+            </div>
+            <strong>${money(it.price*it.qty)}</strong>
+          </div>
         </div>
-        <div class="ci-qty">
-          <button class="qty-btn minus">−</button>
-          <span class="qv">${ci.qty}</span>
-          <button class="qty-btn plus">+</button>
+        <button class="btn danger" data-a="del">Delete</button>
+      `;
+      row.querySelector('[data-a="dec"]').onclick=()=>{ it.qty=Math.max(1,it.qty-1); saveCart(); openCartModal(); };
+      row.querySelector('[data-a="inc"]').onclick=()=>{ it.qty++; saveCart(); openCartModal(); };
+      row.querySelector('[data-a="del"]').onclick=()=>{ state.cart.splice(idx,1); saveCart(); openCartModal(); };
+      wrap.appendChild(row);
+    });
+  }
+  // totals
+  const sub = state.cart.reduce((a,c)=>a+(c.price*c.qty),0);
+  N("#cartSubtotal").textContent = money(sub);
+  dlg.showModal();
+}
+
+function openCheckout(){
+  const dlg = N("#checkoutModal");
+  // calc subtotal
+  const subtotal = state.cart.reduce((a,c)=>a+(c.price*c.qty),0);
+  N("#summarySubtotal").textContent = money(subtotal);
+  // fee
+  const zoneSel = N("#shippingZone");
+  const fee = getZoneFee(zoneSel?.value);
+  N("#shippingFeeDisplay").textContent = money(fee);
+  N("#summaryShipping").textContent = money(fee);
+  N("#summaryTotal").textContent = money(subtotal + fee);
+
+  // Show bank details
+  const b = state.settings?.bank||{};
+  N("#bankDetails").innerHTML = `
+    <div><strong>Account name:</strong> ${b.accountName||"—"}</div>
+    <div><strong>Account number:</strong> ${b.accountNumber||"—"}</div>
+    <div><strong>Bank:</strong> ${b.bankName||"—"}</div>
+  `;
+
+  // Payment proof required unless address_not_listed or stockpile
+  const paymentGroup = N("#paymentProofGroup");
+  const methodRadios = A('input[name="shippingMethod"]');
+  function togglePayment(){
+    const v = [...methodRadios].find(r=>r.checked)?.value;
+    paymentGroup.style.display = (v==="address_not_listed" || v==="stockpile") ? "none" : "block";
+  }
+  methodRadios.forEach(r=>r.addEventListener("change", ()=>{
+    togglePayment();
+    // recalc fee if needed (zone stays same)
+    const fee2 = getZoneFee(zoneSel?.value);
+    N("#summaryShipping").textContent = money(fee2);
+    N("#summaryTotal").textContent = money(subtotal + fee2);
+  }));
+  zoneSel?.addEventListener("change", ()=>{
+    const fee3 = getZoneFee(zoneSel.value);
+    N("#shippingFeeDisplay").textContent = money(fee3);
+    N("#summaryShipping").textContent = money(fee3);
+    N("#summaryTotal").textContent = money(subtotal + fee3);
+  });
+  togglePayment();
+
+  // Place order
+  N("#checkoutForm").onsubmit = async (e)=>{
+    e.preventDefault();
+    if(state.cart.length===0){ alert("Cart is empty."); return; }
+
+    const fd = new FormData(e.target);
+    const name = fd.get("name"); const email=fd.get("email");
+    const phone=fd.get("phone"); const address=fd.get("address");
+    const shippingMethod = fd.get("shippingMethod");
+    const shippingZone   = N("#shippingZone")?.value || "";
+    const shippingFee    = getZoneFee(shippingZone);
+    const subtotalNow    = state.cart.reduce((a,c)=>a+(c.price*c.qty),0);
+    const total          = subtotalNow + shippingFee;
+
+    // Payment proof if required
+    let paymentProofUrl = "";
+    if(!(shippingMethod==="address_not_listed" || shippingMethod==="stockpile")){
+      const file = N("#paymentProofInput").files?.[0];
+      if(!file){ alert("Please upload payment proof."); return; }
+      paymentProofUrl = await uploadToCloudinary(file);
+    }
+
+    // Build order
+    const items = state.cart.map(c=>({
+      productId:c.id, name:c.name, price:c.price, qty:c.qty, color:c.color||null, size:c.size||null, image:c.image||""
+    }));
+    const order = {
+      items, subtotal: subtotalNow, shippingZone, shippingFee, total,
+      customer:{ name,email,phone,address },
+      shippingMethod,
+      paymentProofUrl,
+      status: (shippingMethod==="stockpile"||shippingMethod==="address_not_listed") ? "Pending" : "Awaiting Confirmation",
+      stockpile: shippingMethod==="stockpile",
+      addressNotListed: shippingMethod==="address_not_listed",
+      createdAt: serverTimestamp()
+    };
+
+    // Save to Firestore
+    const ref = await addDoc(ordersCol, order);
+
+    // Decrease stock for non-stockpile? (Bumpa often reserves; we’ll reduce now)
+    for(const it of state.cart){
+      const pRef = doc(db,"products",it.id);
+      const pSnap = await getDoc(pRef);
+      if(pSnap.exists()){
+        const cur = pSnap.data().stock||0;
+        await updateDoc(pRef,{ stock: Math.max(0, cur - it.qty) });
+      }
+    }
+
+    // Email notifications
+    try{
+      const orderId = ref.id;
+      const order_items = items.map(i=>`${i.name} x${i.qty}${i.color?` (${i.color}`:""}${i.size?` ${i.size}`:""}${i.color||i.size?")":""} – ${money(i.price*i.qty)}`).join("\n");
+      const payload = {
+        customer_name:name,
+        order_id:orderId,
+        delivery_address:address,
+        shipping_method:shippingMethod,
+        shipping_fee: money(shippingFee),
+        order_items,
+        total_amount: money(total),
+      };
+      await window.emailjs.send(EMAILJS.service, EMAILJS.customerTemplate, payload);
+      await window.emailjs.send(EMAILJS.service, EMAILJS.adminTemplate, payload);
+    }catch(err){ console.warn("EmailJS error:", err); }
+
+    // Clear cart + close
+    state.cart = []; saveCart();
+    alert("Order placed! We’ll contact you shortly.");
+    N("#checkoutModal").close();
+    N("#cartModal").close();
+  };
+
+  dlg.showModal();
+}
+
+function getZoneFee(name){
+  const z = (state.zones||[]).find(x=>x.name===name);
+  return z? Number(z.fee||0) : 0;
+}
+
+// ========== ADMIN ==========
+function switchTab(tab){
+  A(".tab").forEach(s=>s.classList.remove("active"));
+  N(`#tab-${tab}`).classList.add("active");
+  A(".tab-btn").forEach(b=>b.setAttribute("aria-selected", b.dataset.tab===tab ? "true":"false"));
+}
+
+async function initAdmin(){
+  // tabs
+  A(".tab-btn").forEach(b=>b.addEventListener("click", ()=>switchTab(b.dataset.tab)));
+
+  // Live settings
+  onSnapshot(settingsRef, (snap)=>{
+    state.settings = snap.data();
+    applyTheme(state.settings?.theme);
+    N("#announcementInput").value = state.settings?.announcement||"";
+    // Theme defaults
+    const t = state.settings?.theme||{};
+    const tf = N("#themeForm");
+    if(tf){ tf.bg.value=t.bg||"#ffffff"; tf.text.value=t.text||"#111111"; tf.button.value=t.button||"#111111"; tf.buttonText.value=t.buttonText||"#ffffff"; }
+    // Store profile
+    const sp = N("#storeProfileForm");
+    if(sp){
+      sp.storeName.value = state.settings?.storeName||"";
+      sp.tagline.value   = state.settings?.tagline||"";
+      sp.contactEmail.value = state.settings?.contactEmail||"";
+      sp.contactPhone.value = state.settings?.contactPhone||"";
+      sp.whatsapp.value  = state.settings?.whatsapp||"";
+      N("#adminLogo").src = state.settings?.logoUrl || "assets/logo.jpg";
+    }
+    // Zones
+    renderZones();
+    // Stats profit estimate
+    calcStats();
+  });
+
+  // Products live
+  onSnapshot(query(productsCol, orderBy("createdAt","desc")), (snap)=>{
+    state.products = [];
+    snap.forEach(d=> state.products.push({id:d.id, ...d.data()}));
+    renderProductsList();
+    calcStats();
+  });
+
+  // Orders live
+  onSnapshot(query(ordersCol, orderBy("createdAt","desc")), (snap)=>{
+    const orders = [];
+    snap.forEach(d=> orders.push({id:d.id, ...d.data()}));
+    renderOrdersList(orders);
+    calcStats(orders);
+  });
+
+  // Announcement
+  N("#saveAnnouncement").onclick = async ()=>{
+    await updateDoc(settingsRef,{ announcement: N("#announcementInput").value, updatedAt: serverTimestamp() });
+    alert("Announcement saved");
+  };
+
+  // Theme
+  N("#themeForm").onsubmit = async (e)=>{
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const theme = { bg:fd.get("bg"), text:fd.get("text"), button:fd.get("button"), buttonText:fd.get("buttonText") };
+    await updateDoc(settingsRef,{ theme, updatedAt: serverTimestamp() });
+    applyTheme(theme);
+    alert("Theme saved");
+  };
+
+  // Store profile + logo upload
+  N("#storeProfileForm").onsubmit = async (e)=>{
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    let logoUrl = state.settings?.logoUrl||"";
+    const file = N("#logoUpload").files?.[0];
+    if(file){ logoUrl = await uploadToCloudinary(file); }
+    const payload = {
+      storeName: fd.get("storeName")||"",
+      tagline: fd.get("tagline")||"",
+      contactEmail: fd.get("contactEmail")||"",
+      contactPhone: fd.get("contactPhone")||"",
+      whatsapp: fd.get("whatsapp")||"",
+      logoUrl
+    };
+    await updateDoc(settingsRef, {...payload, updatedAt: serverTimestamp() });
+    alert("Profile saved");
+  };
+
+  // Zones
+  N("#addZone").onclick = async ()=>{
+    const name = N("#zoneName").value.trim();
+    const fee  = Number(N("#zoneFee").value||0);
+    if(!name) return;
+    const zones = [...(state.settings?.shippingZones||[])];
+    zones.push({name, fee});
+    await updateDoc(settingsRef,{ shippingZones: zones, updatedAt: serverTimestamp() });
+    N("#zoneName").value=""; N("#zoneFee").value="";
+  };
+
+  // Shipping notes
+  N("#shippingNotesForm").onsubmit = async (e)=>{
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const notes = {
+      standard: fd.get("standard")||"",
+      express: fd.get("express")||"",
+      pickup: fd.get("pickup")||"",
+      address_not_listed: fd.get("address_not_listed")||"",
+      stockpile: fd.get("stockpile")||""
+    };
+    await updateDoc(settingsRef,{ shippingNotes: notes, updatedAt: serverTimestamp() });
+    alert("Shipping notes saved");
+  };
+
+  // Bank
+  N("#bankForm").onsubmit = async (e)=>{
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const bank = {
+      accountName: fd.get("accountName")||"",
+      accountNumber: fd.get("accountNumber")||"",
+      bankName: fd.get("bankName")||""
+    };
+    await updateDoc(settingsRef,{ bank, updatedAt: serverTimestamp() });
+    alert("Bank details saved");
+  };
+
+  // Product form (colors/sizes as tags + Cloudinary multi-upload)
+  const colors=[]; const sizes=[]; let editingId=null; let uploadUrls=[];
+  function renderTags(arr, host){
+    host.innerHTML = arr.map((t,i)=>`<span class="tag">${t}<span class="x" data-i="${i}">×</span></span>`).join("");
+    host.querySelectorAll(".x").forEach(x=>{
+      x.onclick=()=>{ arr.splice(Number(x.dataset.i),1); renderTags(arr, host); };
+    });
+  }
+  N("#addColor").onclick = ()=>{ const v=N("#colorInput").value.trim(); if(v){ colors.push(v); N("#colorInput").value=""; renderTags(colors,N("#colorTags")); } };
+  N("#addSize").onclick  = ()=>{ const v=N("#sizeInput").value.trim(); if(v){ sizes.push(v);  N("#sizeInput").value="";  renderTags(sizes, N("#sizeTags")); } };
+
+  // Upload preview + collect URLs
+  N("#productImages").addEventListener("change", async (e)=>{
+    uploadUrls = [];
+    N("#uploadPreview").innerHTML = "Uploading...";
+    const files = [...e.target.files];
+    const out = [];
+    for(const f of files){
+      const url = await uploadToCloudinary(f);
+      uploadUrls.push(url);
+      out.push(`<img src="${url}" />`);
+    }
+    N("#uploadPreview").innerHTML = out.join("");
+  });
+
+  // Save product
+  N("#productForm").onsubmit = async (e)=>{
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const payload = {
+      name: fd.get("name")||"",
+      price: Number(fd.get("price")||0),
+      originalCost: Number(fd.get("originalCost")||0),
+      description: fd.get("description")||"",
+      stock: Number(fd.get("stock")||0),
+      collection: fd.get("collection")||"",
+      colors: [...colors],
+      sizes: [...sizes],
+      images: [...uploadUrls],
+      createdAt: serverTimestamp()
+    };
+    if(editingId){
+      const ref = doc(db,"products",editingId);
+      delete payload.createdAt;
+      await updateDoc(ref, payload);
+      alert("Product updated");
+    }else{
+      await addDoc(productsCol, payload);
+      alert("Product added");
+    }
+    // reset
+    e.target.reset(); colors.length=0; sizes.length=0; uploadUrls=[];
+    N("#colorTags").innerHTML=""; N("#sizeTags").innerHTML=""; N("#uploadPreview").innerHTML="";
+    editingId=null;
+  };
+
+  // Reset form
+  N("#resetProductForm").onclick = ()=>{ N("#productForm").reset(); colors.length=0; sizes.length=0; uploadUrls=[]; N("#colorTags").innerHTML=""; N("#sizeTags").innerHTML=""; N("#uploadPreview").innerHTML=""; editingId=null; };
+}
+
+function renderProductsList(){
+  const host = N("#productsList");
+  host.innerHTML = state.products.map(p=>`
+    <div class="item">
+      <img src="${(p.images?.[0])||'assets/placeholder.jpg'}" alt="">
+      <div>
+        <div><strong>${p.name}</strong> · <small>${p.collection||"—"}</small></div>
+        <div class="muted">${money(p.price)} · Stock: ${p.stock} · Colors: ${(p.colors||[]).join(", ")} · Sizes: ${(p.sizes||[]).join(", ")}</div>
+      </div>
+      <div class="row" style="gap:6px">
+        <button class="btn" data-edit="${p.id}">Edit</button>
+        <button class="btn danger" data-del="${p.id}">Delete</button>
+      </div>
+    </div>
+  `).join("");
+
+  // Wire buttons
+  host.querySelectorAll("[data-edit]").forEach(b=>{
+    b.onclick = ()=>{
+      const p = state.products.find(x=>x.id===b.dataset.edit);
+      if(!p) return;
+      const f = N("#productForm");
+      f.id.value = p.id;
+      f.name.value = p.name||"";
+      f.price.value = p.price||0;
+      f.originalCost.value = p.originalCost||0;
+      f.description.value = p.description||"";
+      f.stock.value = p.stock||0;
+      f.collection.value = p.collection||"";
+      // tags
+      const colors = N("#colorTags"); colors.innerHTML=""; (p.colors||[]).forEach(()=>{});
+      // quick re-render helper
+      const cList = []; (p.colors||[]).forEach(x=>cList.push(x));
+      const sList = []; (p.sizes||[]).forEach(x=>sList.push(x));
+      // store into closures used earlier
+      // (hacky but short)
+      window._colRef = cList; window._sizeRef = sList;
+      // patch add/remove functions to use these arrays:
+      // We already bound events earlier, so re-render:
+      const render = (arr, host)=>{ host.innerHTML = arr.map((t,i)=>`<span class="tag">${t}<span class="x" data-i="${i}">×</span></span>`).join(""); host.querySelectorAll(".x").forEach(x=>{ x.onclick=()=>{ arr.splice(Number(x.dataset.i),1); render(arr, host); };});};
+      render(window._colRef, N("#colorTags"));
+      render(window._sizeRef, N("#sizeTags"));
+      // monkey-patch add buttons to push into these refs
+      N("#addColor").onclick = ()=>{ const v=N("#colorInput").value.trim(); if(v){ window._colRef.push(v); N("#colorInput").value=""; render(window._colRef, N("#colorTags")); } };
+      N("#addSize").onclick  = ()=>{ const v=N("#sizeInput").value.trim(); if(v){ window._sizeRef.push(v); N("#sizeInput").value=""; render(window._sizeRef, N("#sizeTags")); } };
+      // images preview only (leave uploads if you want to change)
+      N("#uploadPreview").innerHTML = (p.images||[]).map(u=>`<img src="${u}"/>`).join("");
+      // set editing flag
+      window._editingId = p.id;
+      N("#productForm").onsubmit = async (e)=>{
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const payload = {
+          name: fd.get("name")||"",
+          price: Number(fd.get("price")||0),
+          originalCost: Number(fd.get("originalCost")||0),
+          description: fd.get("description")||"",
+          stock: Number(fd.get("stock")||0),
+          collection: fd.get("collection")||"",
+          colors: [...window._colRef],
+          sizes:  [...window._sizeRef],
+        };
+        // append images if new uploads were chosen
+        const files = [...(N("#productImages").files||[])];
+        if(files.length){
+          const urls=[];
+          for(const f of files){ urls.push(await uploadToCloudinary(f)); }
+          payload.images = urls;
+        }
+        await updateDoc(doc(db,"products",window._editingId), payload);
+        alert("Product updated");
+        e.target.reset(); N("#colorTags").innerHTML=""; N("#sizeTags").innerHTML=""; N("#uploadPreview").innerHTML="";
+        window._editingId=null;
+      };
+      // scroll to form
+      window.scrollTo({top:0,behavior:"smooth"});
+      N('[data-tab="products"]').click();
+    };
+  });
+  host.querySelectorAll("[data-del]").forEach(b=>{
+    b.onclick = async ()=>{
+      if(!confirm("Delete this product?")) return;
+      await deleteDoc(doc(db,"products",b.dataset.del));
+    };
+  });
+}
+
+function renderOrdersList(orders){
+  const host = N("#ordersList");
+  if(!orders?.length){ host.innerHTML = `<div class="empty">No orders yet.</div>`; return; }
+  host.innerHTML = orders.map(o=>{
+    const items = o.items?.map(i=>`${i.name} x${i.qty}${i.color?` (${i.color}`:""}${i.size?` ${i.size}`:""}${i.color||i.size?")":""}`).join(", ") || "";
+    return `
+      <div class="item">
+        <img src="${(o.items?.[0]?.image)||'assets/placeholder.jpg'}" alt="">
+        <div>
+          <div><strong>${o.customer?.name||"—"}</strong> · <small class="muted">${o.customer?.phone||""}</small></div>
+          <div class="muted">${items}</div>
+          <div class="muted">Method: ${o.shippingMethod} · Zone: ${o.shippingZone||"—"} · Total: ${money(o.total||0)}</div>
+          <div class="muted">Status: <strong>${o.status||"Pending"}</strong></div>
+        </div>
+        <div class="row" style="gap:6px">
+          <select data-status="${o.id}">
+            ${["Pending","Awaiting Confirmation","Processing","Completed","Cancelled"].map(s=>`<option ${o.status===s?"selected":""}>${s}</option>`).join("")}
+          </select>
+          <button class="btn" data-save="${o.id}">Save</button>
+          <button class="btn danger" data-del="${o.id}">Delete</button>
         </div>
       </div>
     `;
   }).join("");
 
-  wrap.querySelectorAll(".cart-item").forEach(row=>{
-    const id = row.getAttribute("data-id");
-    row.querySelector(".minus").addEventListener("click",()=>{
-      const item = cart.find(c=>c.productId===id);
-      if(!item) return;
-      item.qty = Math.max(0, item.qty - 1);
-      if(item.qty===0){ cart = cart.filter(c=>c.productId!==id); }
-      DB.set("cart", cart);
-      updateCartBadge(); renderGrid(); renderCart(); updateCartSummary();
-    });
-    row.querySelector(".plus").addEventListener("click",()=>{
-      const item = cart.find(c=>c.productId===id);
-      if(!item) return;
-      item.qty += 1;
-      DB.set("cart", cart);
-      updateCartBadge(); renderGrid(); renderCart(); updateCartSummary();
-    });
+  host.querySelectorAll("[data-save]").forEach(b=>{
+    b.onclick = async ()=>{
+      const st = host.querySelector(`[data-status="${b.dataset.save}"]`).value;
+      await updateDoc(doc(db,"orders",b.dataset.save),{ status:st });
+      alert("Order updated");
+    };
+  });
+  host.querySelectorAll("[data-del]").forEach(b=>{
+    b.onclick = async ()=>{
+      if(!confirm("Delete this order?")) return;
+      await deleteDoc(doc(db,"orders",b.dataset.del));
+    };
   });
 }
-
-function onDeliveryChange(){
-  const method = document.getElementById("deliveryMethod").value;
-  const zoneWrap = document.getElementById("lagosZoneWrap");
-  const addrWrap = document.getElementById("addressWrap");
-  zoneWrap.classList.toggle("hidden", method!=="lagos");
-  addrWrap.classList.toggle("hidden", method==="pickup");
-  updateCartSummary();
-}
-
-function calcSubtotal(){ 
-  return cart.reduce((sum,ci)=>{
-    const p = products.find(x=>x.id===ci.productId);
-    if(!p) return sum;
-    return sum + (Number(p.price||0) * ci.qty);
-  },0);
-}
-
-function calcShipping(){
-  const method = document.getElementById("deliveryMethod")?.value || "pickup";
-  if(method==="pickup") return 0;
-  if(method==="outside") return Number(settings.shipping.outsideLagosFee||0);
-  if(method==="lagos"){
-    const idx = Number(document.getElementById("lagosZone")?.value || 0);
-    const z = settings.shipping.zones[idx];
-    return Number(z?.fee||0);
-  }
-  return 0;
-}
-
-function updateCartSummary(){
-  const sub = calcSubtotal();
-  const ship = calcShipping();
-  const total = sub + ship;
-  const el = id => document.getElementById(id);
-  el("cartSubtotal").textContent = ₦(sub);
-  el("cartShipping").textContent = ₦(ship);
-  el("cartTotal").textContent = ₦(total);
-}
-
-function updateBankNote(){
-  const b = settings.bank;
-  const note = document.getElementById("bankNote");
-  if(!note) return;
-  if(b.bankName && b.accountName && b.accountNumber){
-    note.innerHTML = `<strong>Bank Transfer:</strong><br>${b.bankName}<br>${b.accountName}<br>${b.accountNumber}`;
-  }else{
-    note.textContent = "";
-  }
-}
-
-// Place order (EmailJS to admin + customer)
-async function placeOrder(){
-  if(!cart.length){ alert("Your cart is empty."); return; }
-
-  const name = document.getElementById("custName").value.trim();
-  const email = document.getElementById("custEmail").value.trim();
-  const phone = document.getElementById("custPhone").value.trim();
-  const method = document.getElementById("deliveryMethod").value;
-  const address = (method==="pickup") ? (settings.shipping.pickupNote || "Pickup") : document.getElementById("deliveryAddress").value.trim();
-
-  if(!name || !email || !phone){ alert("Please fill your name, email and phone."); return; }
-
-  const subtotal = calcSubtotal();
-  const shipping = calcShipping();
-  const total = subtotal + shipping;
-
-  const itemsDetail = cart.map(ci=>{
-    const p = products.find(x=>x.id===ci.productId);
-    return `${p?.name} x${ci.qty} — ${₦(p?.price)}`;
-  }).join("\n");
-
-  const gain = cart.reduce((g,ci)=>{
-    const p = products.find(x=>x.id===ci.productId);
-    const profitUnit = Number(p?.price||0) - Number(p?.cost||0);
-    return g + (profitUnit * ci.qty);
-  },0);
-
-  const order = {
-    id: "ord_" + Date.now(),
-    date: new Date().toISOString(),
-    customer: {name,email,phone,address,method},
-    items: cart.map(ci=>{
-      const p = products.find(x=>x.id===ci.productId); 
-      return {productId:ci.productId, name:p?.name, price:Number(p?.price||0), qty:ci.qty};
-    }),
-    subtotal, shipping, total, gain,
-    status: "pending"
-  };
-  orders.unshift(order);
-  DB.set("orders", orders);
-
-  try{
-    if(settings.adminEmail){
-      await emailjs.send("service_opcf6cl", "template_4zrsdni", {
-        to_email: settings.adminEmail,
-        subject: `New order — ${order.id}`,
-        message: `Customer: ${name}\nPhone: ${phone}\nEmail: ${email}\nMethod: ${method}\nAddress: ${address}\n\nItems:\n${itemsDetail}\n\nSubtotal: ${₦(subtotal)}\nShipping: ${₦(shipping)}\nTotal: ${₦(total)}\nGain: ${₦(gain)}`
-      });
-    }
-    await emailjs.send("service_opcf6cl", "template_zc87bdl", {
-      to_email: email,
-      subject: `Your order — ${order.id}`,
-      message: `Thank you ${name}!\nWe received your order.\n\nItems:\n${itemsDetail}\n\nSubtotal: ${₦(subtotal)}\nShipping: ${₦(shipping)}\nTotal: ${₦(total)}\n\nWe will contact you shortly.`
-    });
-  }catch(e){
-    console.warn("EmailJS error", e);
-  }
-
-  cart = [];
-  DB.set("cart", cart);
-  updateCartBadge(); renderGrid(); renderCart(); updateCartSummary();
-  alert("Order placed! Check your email.");
-}
-
-/***********************
- * ADMIN PAGE
- ***********************/
-function initAdmin(){
-  applyThemeLive();
-
-  document.getElementById("adminStoreName").textContent = settings.storeName;
-
-  const panel = document.getElementById("settingsPanel");
-  document.getElementById("openSettings")?.addEventListener("click", ()=>{
-    panel.classList.add("open");
-    document.getElementById("settingsOverlay").classList.remove("hidden");
-  });
-  document.getElementById("closeSettings")?.addEventListener("click", ()=>{
-    panel.classList.remove("open");
-    document.getElementById("settingsOverlay").classList.add("hidden");
-  });
-  document.getElementById("settingsOverlay")?.addEventListener("click", ()=>{
-    panel.classList.remove("open");
-    document.getElementById("settingsOverlay").classList.add("hidden");
-  });
-  document.addEventListener("keydown",(e)=>{ if(e.key==="Escape"){ panel.classList.remove("open"); document.getElementById("settingsOverlay").classList.add("hidden"); }});
-
-  setVal("setStoreName", settings.storeName);
-  setVal("setAnnouncement", settings.announcementText);
-  setVal("setAnnBg", settings.announcementBg);
-  setVal("setAnnText", settings.announcementTextColor);
-  setVal("setBg", settings.theme.bg);
-  setVal("setBtnBg", settings.theme.btn);
-  setVal("setBtnText", settings.theme.btnText);
-  setVal("setAdminEmail", settings.adminEmail);
-  setVal("setStoreEmail", settings.storeEmail);
-  setVal("setWhatsapp", settings.whatsapp);
-  setVal("setBankName", settings.bank.bankName);
-  setVal("setAccountName", settings.bank.accountName);
-  setVal("setAccountNumber", settings.bank.accountNumber);
-  setVal("setOutsideFee", settings.shipping.outsideLagosFee);
-  setVal("setPickupNote", settings.shipping.pickupNote);
-
-  renderZones();
-
-  onInput("setStoreName", v=>{ settings.storeName=v; DB.set("settings",settings); document.getElementById("adminStoreName").textContent=v; });
-  onInput("setAnnouncement", v=>{ settings.announcementText=v; DB.set("settings",settings); document.getElementById("announceBar").textContent=v; });
-  onInput("setAnnBg", v=>{ settings.announcementBg=v; DB.set("settings",settings); applyThemeLive(); });
-  onInput("setAnnText", v=>{ settings.announcementTextColor=v; DB.set("settings",settings); applyThemeLive(); });
-  onInput("setBg", v=>{ settings.theme.bg=v; DB.set("settings",settings); applyThemeLive(); });
-  onInput("setBtnBg", v=>{ settings.theme.btn=v; DB.set("settings",settings); applyThemeLive(); });
-  onInput("setBtnText", v=>{ settings.theme.btnText=v; DB.set("settings",settings); applyThemeLive(); });
-  onInput("setAdminEmail", v=>{ settings.adminEmail=v; DB.set("settings",settings); });
-  onInput("setStoreEmail", v=>{ settings.storeEmail=v; DB.set("settings",settings); });
-  onInput("setWhatsapp", v=>{ settings.whatsapp=v; DB.set("settings",settings); });
-
-  onInput("setBankName", v=>{ settings.bank.bankName=v; DB.set("settings",settings); updateBankNote(); });
-  onInput("setAccountName", v=>{ settings.bank.accountName=v; DB.set("settings",settings); updateBankNote(); });
-  onInput("setAccountNumber", v=>{ settings.bank.accountNumber=v; DB.set("settings",settings); updateBankNote(); });
-
-  onInput("setOutsideFee", v=>{ settings.shipping.outsideLagosFee=Number(v||0); DB.set("settings",settings); updateZonesEverywhere(); });
-  onInput("setPickupNote", v=>{ settings.shipping.pickupNote=v; DB.set("settings",settings); });
-
-  document.getElementById("addZone").addEventListener("click", ()=>{
-    const name = document.getElementById("zoneName").value.trim();
-    const fee  = Number(document.getElementById("zoneFee").value||0);
-    if(!name){ alert("Enter zone name"); return; }
-    settings.shipping.zones.push({name, fee});
-    DB.set("settings", settings);
-    document.getElementById("zoneName").value="";
-    document.getElementById("zoneFee").value="";
-    renderZones();
-    updateZonesEverywhere();
-  });
-
-  renderStats();
-  renderOrdersTable();
-  renderCollectionsUI();
-
-  document.getElementById("addCollection").addEventListener("click", ()=>{
-    const name = document.getElementById("newCollectionName").value.trim();
-    if(!name) return;
-    const id = "col_" + Date.now();
-    collections.push({id,name});
-    DB.set("collections", collections);
-    document.getElementById("newCollectionName").value="";
-    renderCollectionsUI();
-    refreshProductCollectionSelects();
-  });
-
-  document.getElementById("toggleAddProduct").addEventListener("click", ()=>{
-    document.getElementById("productForm").classList.toggle("hidden");
-    resetProductForm();
-  });
-
-  document.getElementById("addColor").addEventListener("click", ()=>{
-    const v = document.getElementById("colorInput").value.trim();
-    if(!v) return;
-    appendChip("colorList", v);
-    document.getElementById("colorInput").value="";
-  });
-  document.getElementById("addSize").addEventListener("click", ()=>{
-    const v = document.getElementById("sizeInput").value.trim();
-    if(!v) return;
-    appendChip("sizeList", v);
-    document.getElementById("sizeInput").value="";
-  });
-
-  document.getElementById("cancelProduct").addEventListener("click", ()=>{
-    resetProductForm();
-    document.getElementById("productForm").classList.add("hidden");
-  });
-
-  document.getElementById("productForm").addEventListener("submit", async (e)=>{
-    e.preventDefault();
-    const id = document.getElementById("editId").value || ("p_" + Date.now());
-    const name = document.getElementById("pName").value.trim();
-    const price = Number(document.getElementById("pPrice").value||0);
-    const cost  = Number(document.getElementById("pCost").value||0);
-    const stock = Number(document.getElementById("pStock").value||0);
-    const desc  = document.getElementById("pDesc").value;
-    const coll  = document.getElementById("pCollection").value || "";
-    const colors = readChips("colorList");
-    const sizes  = readChips("sizeList");
-
-    const imgs  = await dataURLFromFiles(document.getElementById("pImages").files);
-
-    const existing = products.find(x=>x.id===id);
-    if(existing){
-      existing.name=name; existing.price=price; existing.cost=cost; existing.stock=stock;
-      existing.description=desc; existing.collectionId=coll;
-      existing.colors=colors; existing.sizes=sizes;
-      if(imgs.length){ existing.images = imgs; }
-    }else{
-      products.unshift({
-        id, name, price, cost, stock,
-        description:desc,
-        collectionId: coll || "",
-        colors, sizes,
-        images: imgs.length? imgs : []
-      });
-    }
-    DB.set("products", products);
-    document.getElementById("productForm").classList.add("hidden");
-    renderProductsList();
-    refreshAssignProducts();
-    refreshProductCollectionSelects();
-    renderStats();
-  });
-
-  renderProductsList();
-  refreshAssignProducts();
-  refreshProductCollectionSelects();
-}
-
-/*** small helpers ***/
-function setVal(id, v){ const el=document.getElementById(id); if(el) el.value = v ?? ""; }
-function onInput(id, fn){ const el=document.getElementById(id); if(!el) return; el.addEventListener("input", e=>fn(e.target.value)); }
 
 function renderZones(){
-  const zlist = document.getElementById("zoneList");
-  zlist.innerHTML = settings.shipping.zones.map((z,i)=>`
-    <span class="chip">${z.name} (${₦(z.fee)}) <span class="x" data-i="${i}">×</span></span>
-  `).join("");
-  zlist.querySelectorAll(".x").forEach(x=>{
-    x.addEventListener("click", ()=>{
-      const i = Number(x.getAttribute("data-i"));
-      settings.shipping.zones.splice(i,1);
-      DB.set("settings",settings);
-      renderZones();
-      updateZonesEverywhere();
-    });
-  });
-}
-function updateZonesEverywhere(){
-  const zsel = document.getElementById("lagosZone");
-  if(zsel){
-    zsel.innerHTML = settings.shipping.zones.map((z,i)=>`<option value="${i}">${z.name} (${₦(z.fee)})</option>`).join("");
-  }
-}
-
-/*** dashboard ***/
-function renderStats(){
-  const totalOrders = orders.length;
-  const totalSales = orders.reduce((s,o)=>s + Number(o.total||0),0);
-  const pending = orders.filter(o=>o.status==="pending").length;
-  const prodCount = products.length;
-  setText("statOrders", totalOrders);
-  setText("statSales", ₦(totalSales));
-  setText("statPending", pending);
-  setText("statProducts", prodCount);
-}
-function setText(id, v){ const el=document.getElementById(id); if(el) el.textContent = v; }
-
-function renderOrdersTable(){
-  const tbody = document.getElementById("ordersTable");
-  tbody.innerHTML = orders.slice(0,20).map(o=>`
-    <tr data-id="${o.id}">
-      <td>${new Date(o.date).toLocaleString()}</td>
-      <td>${o.customer.name}</td>
-      <td>${₦(o.total)}</td>
-      <td>
-        <select class="ordStatus">
-          <option value="pending" ${o.status==="pending"?"selected":""}>Pending</option>
-          <option value="paid" ${o.status==="paid"?"selected":""}>Successful</option>
-          <option value="cancelled" ${o.status==="cancelled"?"selected":""}>Cancelled</option>
-        </select>
-      </td>
-      <td>${₦(o.gain)}</td>
-      <td><button class="btn small delOrd">Delete</button></td>
-    </tr>
-  `).join("");
-  tbody.querySelectorAll(".ordStatus").forEach(sel=>{
-    sel.addEventListener("change", (e)=>{
-      const tr = e.target.closest("tr");
-      const id = tr.getAttribute("data-id");
-      const ord = orders.find(x=>x.id===id);
-      if(ord){ ord.status = e.target.value; DB.set("orders", orders); renderStats(); }
-    });
-  });
-  tbody.querySelectorAll(".delOrd").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      const tr = btn.closest("tr");
-      const id = tr.getAttribute("data-id");
-      orders = orders.filter(o=>o.id!==id);
-      DB.set("orders", orders);
-      renderOrdersTable();
-      renderStats();
-    });
+  const zones = state.settings?.shippingZones||[];
+  const host = N("#zonesList");
+  host.innerHTML = zones.map((z,i)=>`<span class="tag">${z.name} · ${money(z.fee)}<span class="x" data-i="${i}">×</span></span>`).join("");
+  host.querySelectorAll(".x").forEach(x=>{
+    x.onclick = async ()=>{
+      zones.splice(Number(x.dataset.i),1);
+      await updateDoc(settingsRef,{ shippingZones: zones, updatedAt: serverTimestamp() });
+    };
   });
 }
 
-/*** products UI ***/
-function resetProductForm(){
-  ["pName","pPrice","pCost","pDesc","editId","pStock"].forEach(id=>setVal(id,""));
-  document.getElementById("pImages").value="";
-  document.getElementById("colorList").innerHTML="";
-  document.getElementById("sizeList").innerHTML="";
-  document.getElementById("pCollection").value="";
-}
-function appendChip(listId, text){
-  const wrap = document.getElementById(listId);
-  const span = document.createElement("span");
-  span.className="chip";
-  span.innerHTML = `${text} <span class="x">×</span>`;
-  span.querySelector(".x").addEventListener("click", ()=> span.remove());
-  wrap.appendChild(span);
-}
-function readChips(listId){
-  return Array.from(document.querySelectorAll(`#${listId} .chip`)).map(ch=>{
-    return ch.textContent.replace("×","").trim();
-  });
-}
-function renderProductsList(){
-  const list = document.getElementById("productsList");
-  list.innerHTML = products.map(p=>{
-    const img = (p.images && p.images[0]) || "assets/placeholder.jpg";
-    const col = collections.find(c=>c.id===p.collectionId)?.name || "—";
-    return `
-      <div class="card-row" data-id="${p.id}">
-        <img src="${img}" alt="${p.name}">
-        <div>
-          <div style="font-weight:700">${p.name}</div>
-          <div class="ci-meta">${₦(p.price)} · Cost ${₦(p.cost||0)} · Stock: ${p.stock||0} · Collection: ${col}</div>
-        </div>
-        <div>
-          <button class="btn small edit">Edit</button>
-          <button class="btn small del">Delete</button>
-        </div>
-      </div>
-    `;
-  }).join("");
+function calcStats(ordersSnap){
+  const productsCount = state.products.length;
+  N("#statProducts") && (N("#statProducts").textContent=productsCount);
+  if(!ordersSnap) return;
+  const orders = ordersSnap||[];
+  N("#statOrders") && (N("#statOrders").textContent=orders.length);
+  const pending = orders.filter(o=>o.status==="Pending"||o.status==="Awaiting Confirmation").length;
+  N("#statPending") && (N("#statPending").textContent=pending);
 
-  list.querySelectorAll(".edit").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      const id = btn.closest(".card-row").getAttribute("data-id");
-      const p = products.find(x=>x.id===id);
-      if(!p) return;
-      document.getElementById("productForm").classList.remove("hidden");
-      setVal("editId", p.id);
-      setVal("pName", p.name);
-      setVal("pPrice", p.price);
-      setVal("pCost", p.cost);
-      setVal("pStock", p.stock);
-      setVal("pDesc", p.description||"");
-      setVal("pCollection", p.collectionId || "");
-      document.getElementById("colorList").innerHTML="";
-      (p.colors||[]).forEach(c=>appendChip("colorList", c));
-      document.getElementById("sizeList").innerHTML="";
-      (p.sizes||[]).forEach(s=>appendChip("sizeList", s));
-      document.getElementById("pImages").value="";
-    });
-  });
-  list.querySelectorAll(".del").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      const id = btn.closest(".card-row").getAttribute("data-id");
-      products = products.filter(p=>p.id!==id);
-      DB.set("products", products);
-      renderProductsList();
-      refreshAssignProducts();
-      renderStats();
-    });
-  });
-}
-
-function renderCollectionsUI(){
-  const pills = document.getElementById("collectionsList");
-  pills.innerHTML = collections.filter(c=>c.id!=="all").map(c=>
-    `<span class="pill">${c.name}</span>`
-  ).join("");
-
-  const sel = document.getElementById("assignCollectionSelect");
-  sel.innerHTML = collections.filter(c=>c.id!=="all").map(c=>`<option value="${c.id}">${c.name}</option>`).join("");
-
-  refreshAssignProducts();
-}
-
-function refreshAssignProducts(){
-  const box = document.getElementById("assignProducts");
-  box.innerHTML = products.map(p=>{
-    const img = (p.images && p.images[0]) || "assets/placeholder.jpg";
-    return `
-      <label class="assign-item">
-        <input type="checkbox" class="assChk" value="${p.id}" />
-        <img src="${img}" alt="${p.name}">
-        <div>
-          <div style="font-weight:700">${p.name}</div>
-          <div class="ci-meta">${₦(p.price)}</div>
-        </div>
-      </label>
-    `;
-  }).join("");
-
-  document.getElementById("applyAssignment").onclick = ()=>{
-    const colId = document.getElementById("assignCollectionSelect").value;
-    if(!colId){ alert("Create a collection first."); return; }
-    const ids = Array.from(document.querySelectorAll(".assChk:checked")).map(i=>i.value);
-    products.forEach(p=>{
-      if(ids.includes(p.id)) p.collectionId = colId;
-    });
-    DB.set("products", products);
-    renderProductsList();
-  };
-}
-
-function refreshProductCollectionSelects(){
-  const sel = document.getElementById("pCollection");
-  sel.innerHTML = `<option value="">Select collection (optional)</option>` +
-    collections.filter(c=>c.id!=="all").map(c=>`<option value="${c.id}">${c.name}</option>`).join("");
-}
-
-/***********************
- * CONTACT FORM (store)
- ***********************/
-(function initContactHook(){
-  document.getElementById("contactForm")?.addEventListener("submit", async (e)=>{
-    e.preventDefault();
-    const n = document.getElementById("cuName").value.trim();
-    const em= document.getElementById("cuEmail").value.trim();
-    const m = document.getElementById("cuMsg").value.trim();
-    if(!n || !em || !m) return;
-
-    try{
-      const to = settings.storeEmail || settings.adminEmail;
-      if(to){
-        await emailjs.send("service_opcf6cl", "template_4zrsdni", {
-          to_email: to,
-          subject: `Contact — ${n}`,
-          message: `${m}\n\nFrom: ${n} (${em})`
-        });
-      }
-      alert("Message sent!");
-      e.target.reset();
-    }catch(err){
-      console.warn(err);
-      alert("Could not send message right now.");
+  // Estimated profit: sum of (price - originalCost) * qty
+  let profit = 0;
+  for(const o of orders){
+    for(const it of (o.items||[])){
+      const p = state.products.find(x=>x.id===it.productId);
+      const oc = p?.originalCost||0;
+      profit += (Number(it.price)-Number(oc)) * Number(it.qty||0);
     }
-  });
-})();
-
-/***********************
- * PAGE ROUTER
- ***********************/
-document.addEventListener("DOMContentLoaded", ()=>{
-  const page = document.documentElement.getAttribute("data-page");
-  applyThemeLive();
-
-  if(page==="store"){
-    initStore();
   }
-  if(page==="admin"){
-    initAdmin();
-  }
-});
+  N("#statProfit") && (N("#statProfit").textContent = money(profit));
+}
+
+// ========== Router ==========
+const page = document.body.getAttribute("data-page");
+if(page==="store") initStore();
+if(page==="admin") initAdmin();
+
+// ========== END ==========
