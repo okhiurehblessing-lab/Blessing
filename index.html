@@ -3,53 +3,48 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Essysessentials – Store</title>
+  <title>Essysessentials — Store</title>
   <link rel="stylesheet" href="styles.css" />
   <script defer type="module" src="script.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
 </head>
 <body data-page="store">
-  <!-- Announcement -->
   <div id="announcementBar" class="announcement"></div>
 
-  <!-- Header -->
   <header class="header">
     <div class="brand">
-      <img id="storeLogo" class="logo" alt="logo" src="assets/logo.jpg" />
-      <div>
-        <h1 id="storeName">Essysessentials</h1>
-        <small id="storeTag" class="muted">Quality essentials for everyday</small>
+      <img id="storeLogo" class="logo" src="assets/logo.jpg" alt="logo" />
+      <div class="brand-text">
+        <div id="storeName" class="store-name">Essysessentials</div>
+        <div id="storeTag" class="muted">Quality essentials for everyday</div>
       </div>
     </div>
 
     <div class="header-actions">
       <input id="searchInput" class="search" type="search" placeholder="Search products..." />
       <select id="collectionFilter" class="select">
-        <option value="">All collections</option>
+        <option value="">All categories</option>
       </select>
-      <button id="cartBtn" class="icon-btn" aria-label="Cart">
-        🛒 <span id="cartCount" class="badge">0</span>
-      </button>
+      <button id="cartBtn" class="icon-btn" aria-label="Cart">🛒 <span id="cartCount" class="badge">0</span></button>
     </div>
   </header>
 
-  <!-- Products -->
   <main class="container">
     <section id="productsGrid" class="grid"></section>
   </main>
 
-  <!-- Product details -->
+  <!-- Product details modal -->
   <dialog id="productModal" class="modal">
     <form method="dialog" class="modal-card" id="productModalForm">
       <button class="close" value="close" aria-label="Close">✕</button>
       <div class="modal-body">
         <div class="modal-media">
-          <img id="pmImage" class="modal-image" alt="product image" />
+          <img id="pmImage" class="modal-image" alt="product image" src="assets/placeholder.jpg"/>
           <div id="pmThumbs" class="thumbs"></div>
         </div>
         <div class="modal-info">
           <h3 id="pmName"></h3>
-          <p id="pmPrice" class="price"></p>
+          <div id="pmPrice" class="price"></div>
           <p id="pmDesc"></p>
           <div id="pmStockWrap" class="stock-wrap"></div>
 
@@ -68,80 +63,67 @@
     </form>
   </dialog>
 
-  <!-- Cart (always opens even if empty) -->
+  <!-- Cart modal (always opens) -->
   <dialog id="cartModal" class="modal">
     <form method="dialog" class="modal-card">
       <button class="close" value="close" aria-label="Close">✕</button>
-      <h3>Your Cart</h3>
-      <div id="cartItems"></div>
+      <h3>Your cart</h3>
+      <div id="cartItems" class="cart-items"></div>
       <div id="cartEmpty" class="empty">
-        <p>Your cart is currently empty.</p>
+        <p>Your cart is currently empty</p>
         <button id="returnToShop" class="btn">Return to shop</button>
       </div>
+
       <div class="cart-summary">
         <div class="row"><span>Subtotal:</span><strong id="cartSubtotal">₦0</strong></div>
-        <button id="proceedToCheckout" type="button" class="btn primary">Proceed to Checkout</button>
+        <div class="row actions">
+          <button id="continueShopping" type="button" class="btn">Continue shopping</button>
+          <button id="proceedToCheckout" type="button" class="btn primary">Proceed to Checkout</button>
+        </div>
       </div>
     </form>
   </dialog>
 
-  <!-- Checkout -->
-  <dialog id="checkoutModal" class="modal">
-    <form method="dialog" class="modal-card" id="checkoutForm">
+  <!-- Checkout page-style dialog (scrollable, larger) -->
+  <dialog id="checkoutModal" class="modal large">
+    <form id="checkoutForm" class="modal-card" method="dialog">
       <button class="close" value="close" aria-label="Close">✕</button>
-      <h3>Checkout</h3>
+      <button id="backToCart" type="button" class="btn subtle">← Back to cart</button>
 
-      <fieldset class="group">
-        <legend>Customer details</legend>
+      <h3>Checkout</h3>
+      <section class="checkout-section">
+        <h4>Customer details</h4>
         <input required name="name" placeholder="Full name" />
         <input required name="email" type="email" placeholder="Email" />
         <input required name="phone" placeholder="Phone number" />
         <textarea required name="address" placeholder="Delivery address (Street, City, State, Country)"></textarea>
-      </fieldset>
+      </section>
 
-      <fieldset class="group">
-        <legend>Shipping</legend>
-        <div class="radio-col" id="shippingMethods">
-          <!-- Notes injected from admin Settings -->
-          <label><input type="radio" name="shippingMethod" value="standard" checked /> Standard Delivery</label>
-          <small id="note-standard" class="note"></small>
-
-          <label><input type="radio" name="shippingMethod" value="express" /> Express Delivery</label>
-          <small id="note-express" class="note"></small>
-
-          <label><input type="radio" name="shippingMethod" value="pickup" /> Pickup</label>
-          <small id="note-pickup" class="note"></small>
-
-          <label><input type="radio" name="shippingMethod" value="address_not_listed" /> Address not listed</label>
-          <small id="note-address_not_listed" class="note"></small>
-
-          <label><input type="radio" name="shippingMethod" value="stockpile" /> Stockpile (save for later)</label>
-          <small id="note-stockpile" class="note"></small>
+      <section class="checkout-section">
+        <h4>Shipping method</h4>
+        <div id="shippingBlocks" class="shipping-blocks"></div>
+        <div id="customAddressWrap" style="display:none;margin-top:8px;">
+          <label>Enter custom address (if not listed)</label>
+          <textarea name="customAddress" placeholder="Type address for admin to review"></textarea>
         </div>
+      </section>
 
-        <label class="label">Zone (fees set by admin)</label>
-        <select id="shippingZone" name="shippingZone" class="select"></select>
-
-        <div class="row"><span>Shipping fee:</span><strong id="shippingFeeDisplay">₦0</strong></div>
-      </fieldset>
-
-      <fieldset class="group" id="paymentProofGroup">
-        <legend>Payment</legend>
+      <section class="checkout-section" id="paymentSection">
+        <h4>Payment</h4>
         <div id="bankDetails" class="bank"></div>
-        <label class="label">Upload payment proof (required unless Address not listed or Stockpile)</label>
+        <label>Upload payment proof (required unless Address not listed or Stockpile)</label>
         <input id="paymentProofInput" type="file" accept="image/*" />
-      </fieldset>
+      </section>
 
-      <div class="cart-summary">
+      <section class="checkout-summary">
         <div class="row"><span>Subtotal:</span><strong id="summarySubtotal">₦0</strong></div>
         <div class="row"><span>Shipping:</span><strong id="summaryShipping">₦0</strong></div>
         <div class="row total"><span>Total:</span><strong id="summaryTotal">₦0</strong></div>
         <button id="placeOrderBtn" type="submit" class="btn primary">Place order</button>
-      </div>
+      </section>
     </form>
   </dialog>
 
-  <!-- Footer -->
   <footer class="footer">
     <div class="contact">
       <h4>Contact us</h4>
@@ -151,9 +133,9 @@
     <small>© <span id="year"></span> <span id="footerStoreName">Essysessentials</span>. All rights reserved.</small>
   </footer>
 
-  <!-- WhatsApp floating -->
   <a id="waFloat" class="wa-float" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
     <img src="assets/whatsapp.jpg" alt="WhatsApp" />
   </a>
+
 </body>
 </html>
