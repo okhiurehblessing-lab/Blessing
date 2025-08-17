@@ -8,6 +8,7 @@
   <script defer type="module" src="script.js"></script>
 </head>
 <body data-page="admin">
+
   <header class="admin-header">
     <div class="brand">
       <img id="adminLogo" class="logo small" src="assets/logo.jpg" alt="logo" />
@@ -17,7 +18,8 @@
       </div>
     </div>
     <div class="right-actions">
-      <button id="logoutBtn" class="btn subtle">Logout</button>
+      <div id="adminUserWrap" class="admin-user muted">Not signed in</div>
+      <button id="logoutBtn" class="btn subtle" style="display:none">Logout</button>
     </div>
   </header>
 
@@ -26,14 +28,17 @@
       <nav>
         <button class="side-btn active" data-page="dashboard">Dashboard</button>
         <button class="side-btn" data-page="products">Products</button>
+        <button class="side-btn" data-page="collections">Collections</button>
         <button class="side-btn" data-page="orders">Orders</button>
         <button class="side-btn" data-page="customers">Customers</button>
+        <button class="side-btn" data-page="subscribers">Subscribers</button>
+        <button class="side-btn" data-page="coupons">Coupons</button>
         <button class="side-btn" data-page="settings" title="Settings ⚙️">⚙️</button>
       </nav>
     </aside>
 
     <main class="admin-main">
-      <!-- Dashboard -->
+      <!-- DASHBOARD -->
       <section id="dashboard" class="admin-tab active">
         <div class="stats">
           <div class="card"><h3 id="statProducts">0</h3><p>Products</p></div>
@@ -43,15 +48,21 @@
         </div>
 
         <div class="card">
-          <h3>Announcement</h3>
-          <textarea id="announcementInput" placeholder="Type announcement..."></textarea>
+          <h3>Announcement / Popup</h3>
+          <label>Popup On/Off</label>
+          <div class="row" style="gap:8px;">
+            <select id="popupToggle"><option value="on">On</option><option value="off">Off</option></select>
+            <button id="savePopupToggle" class="btn">Save</button>
+          </div>
+          <input id="popupTitleInput" placeholder="Popup title" style="margin-top:8px"/>
+          <textarea id="popupBodyInput" placeholder="Popup message (text only)" style="margin-top:8px"></textarea>
           <div class="row" style="margin-top:8px">
-            <button id="saveAnnouncement" class="btn primary">Save</button>
+            <button id="savePopup" class="btn primary">Save popup</button>
           </div>
         </div>
       </section>
 
-      <!-- Products -->
+      <!-- PRODUCTS -->
       <section id="products" class="admin-tab">
         <div class="card">
           <h3>Add / Edit Product</h3>
@@ -62,7 +73,7 @@
             <input required name="originalCost" type="number" min="0" placeholder="Original cost (admin only)" />
             <textarea name="description" placeholder="Description"></textarea>
             <input required name="stock" type="number" min="0" placeholder="Stock quantity" />
-            <input name="collection" placeholder="Collection (Category)" />
+            <input name="collection" placeholder="Collection (click from Collections to assign)" />
 
             <div class="tag-inputs">
               <label>Colors</label>
@@ -101,7 +112,30 @@
         </div>
       </section>
 
-      <!-- Orders -->
+      <!-- COLLECTIONS -->
+      <section id="collections" class="admin-tab">
+        <div class="card">
+          <h3>Collections</h3>
+          <form id="collectionForm">
+            <input id="collectionId" type="hidden" />
+            <input id="collectionName" placeholder="Collection name" />
+            <div class="row" style="margin-top:8px">
+              <button id="addCollection" class="btn">Add / Update collection</button>
+            </div>
+          </form>
+          <div id="collectionsList" class="list" style="margin-top:12px"></div>
+        </div>
+
+        <div class="card">
+          <h3>Assign products to collection</h3>
+          <p>Pick a collection, then check products to assign.</p>
+          <select id="assignCollectionSelect"></select>
+          <div id="assignProductsList" class="list" style="margin-top:8px"></div>
+          <div class="row" style="margin-top:8px"><button id="assignSave" class="btn">Save assignments</button></div>
+        </div>
+      </section>
+
+      <!-- ORDERS -->
       <section id="orders" class="admin-tab">
         <div class="card">
           <h3>Orders</h3>
@@ -109,7 +143,7 @@
         </div>
       </section>
 
-      <!-- Customers -->
+      <!-- CUSTOMERS -->
       <section id="customers" class="admin-tab">
         <div class="card">
           <h3>Customers</h3>
@@ -117,7 +151,30 @@
         </div>
       </section>
 
-      <!-- Settings -->
+      <!-- SUBSCRIBERS -->
+      <section id="subscribers" class="admin-tab">
+        <div class="card">
+          <h3>Subscribers (Popup signups)</h3>
+          <div id="subscribersList" class="list"></div>
+        </div>
+      </section>
+
+      <!-- COUPONS -->
+      <section id="coupons" class="admin-tab">
+        <div class="card">
+          <h3>Coupons & Discounts</h3>
+          <form id="couponForm">
+            <input id="couponId" type="hidden" />
+            <input id="couponCode" placeholder="Code (e.g., WELCOME10)" />
+            <select id="couponType"><option value="percent">Percentage</option><option value="fixed">Fixed amount</option></select>
+            <input id="couponValue" type="number" placeholder="Value (e.g., 10 for 10% or 1000 for ₦1,000)" />
+            <div class="row" style="margin-top:8px"><button id="saveCoupon" class="btn">Save coupon</button></div>
+          </form>
+          <div id="couponsList" class="list" style="margin-top:12px"></div>
+        </div>
+      </section>
+
+      <!-- SETTINGS -->
       <section id="settings" class="admin-tab">
         <div class="card">
           <h3>Store Profile</h3>
@@ -129,6 +186,8 @@
             <input name="whatsapp" placeholder="WhatsApp number (234...)" />
             <label>Logo</label>
             <input id="logoUpload" type="file" accept="image/*" />
+            <label>Banner image</label>
+            <input id="bannerUpload" type="file" accept="image/*" />
             <div class="row" style="margin-top:8px">
               <button class="btn" type="submit">Save profile</button>
             </div>
@@ -142,6 +201,12 @@
             <label>Text</label><input type="color" name="text" />
             <label>Button</label><input type="color" name="button" />
             <label>Button Text</label><input type="color" name="buttonText" />
+            <label>Font family</label>
+            <select name="font">
+              <option value="Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial">Inter / System</option>
+              <option value="Arial,Helvetica,sans-serif">Arial</option>
+              <option value="Georgia,serif">Georgia</option>
+            </select>
             <div class="row" style="margin-top:8px">
               <button class="btn" type="submit">Save theme</button>
             </div>
@@ -149,12 +214,14 @@
         </div>
 
         <div class="card">
-          <h3>Shipping blocks (editable rectangles)</h3>
+          <h3>Shipping blocks (rectangles)</h3>
           <form id="shippingBlockForm">
-            <input id="shipTitle" placeholder="Title (e.g., Outside Lagos)" />
+            <input id="shipId" type="hidden" />
+            <input id="shipTitle" placeholder="Title (e.g., Lagos Mainland)" />
+            <input id="shipFee" type="number" placeholder="Fee (₦) — leave blank for manual fee" />
             <textarea id="shipDesc" placeholder="Write shipping details, fees, conditions..."></textarea>
             <div class="row" style="margin-top:8px">
-              <button id="addShipBlock" class="btn">Add block</button>
+              <button id="addShipBlock" class="btn">Add / Update block</button>
             </div>
           </form>
           <div id="shippingBlocksList" class="tags" style="margin-top:8px"></div>
@@ -171,9 +238,11 @@
             </div>
           </form>
         </div>
+
       </section>
 
     </main>
   </div>
+
 </body>
 </html>
