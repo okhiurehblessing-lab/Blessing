@@ -1,199 +1,164 @@
-<!DOCTYPE html>
-<html lang="en" data-page="admin">
+<!doctype html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Essysessentials — Admin</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Essysessentials – Admin</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script defer type="module" src="script.js"></script>
 </head>
-<body class="admin-body">
-
-  <header class="admin-topbar">
-    <div class="admin-brand">
-      <img src="assets/logo.jpg" class="admin-logo" alt="Logo" />
-      <span id="adminStoreName">Essysessentials</span>
+<body data-page="admin">
+  <header class="admin-header">
+    <div class="brand">
+      <img id="adminLogo" class="logo" alt="logo" src="assets/logo.jpg" />
+      <h1>Admin Panel</h1>
     </div>
-    <div class="admin-actions">
-      <button id="openSettings" class="icon-btn" aria-label="Settings">⚙️</button>
-    </div>
+    <nav class="tabs">
+      <button class="tab-btn" data-tab="dashboard" aria-selected="true">Dashboard</button>
+      <button class="tab-btn" data-tab="products">Products</button>
+      <button class="tab-btn" data-tab="orders">Orders</button>
+      <button class="tab-btn" data-tab="settings">Settings</button>
+    </nav>
   </header>
 
-  <!-- Dashboard cards -->
-  <section class="dash-cards">
-    <div class="dash-card">
-      <div class="dash-title">Total Orders</div>
-      <div id="statOrders" class="dash-value">0</div>
-    </div>
-    <div class="dash-card">
-      <div class="dash-title">Total Sales</div>
-      <div id="statSales" class="dash-value">₦0</div>
-    </div>
-    <div class="dash-card">
-      <div class="dash-title">Pending</div>
-      <div id="statPending" class="dash-value">0</div>
-    </div>
-    <div class="dash-card">
-      <div class="dash-title">Products</div>
-      <div id="statProducts" class="dash-value">0</div>
-    </div>
-  </section>
+  <main class="container">
 
-  <!-- Recent Orders -->
-  <section class="panel">
-    <div class="panel-head"><h2>Recent Orders</h2></div>
-    <div class="table-wrap">
-      <table class="table">
-        <thead>
-          <tr><th>Date</th><th>Customer</th><th>Total</th><th>Status</th><th>Gain</th><th>Actions</th></tr>
-        </thead>
-        <tbody id="ordersTable"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- Products Manager -->
-  <section class="panel">
-    <div class="panel-head">
-      <h2>Products</h2>
-      <div class="panel-actions">
-        <button id="toggleAddProduct" class="btn small">Add product</button>
+    <!-- DASHBOARD -->
+    <section id="tab-dashboard" class="tab active">
+      <div class="stats">
+        <div class="card"><h3 id="statProducts">0</h3><p>Products</p></div>
+        <div class="card"><h3 id="statOrders">0</h3><p>Orders</p></div>
+        <div class="card"><h3 id="statPending">0</h3><p>Pending</p></div>
+        <div class="card"><h3 id="statProfit">₦0</h3><p>Estimated Profit</p></div>
       </div>
-    </div>
-
-    <form id="productForm" class="form hidden">
-      <div class="grid-2">
-        <input id="pName" type="text" placeholder="Product name" required />
-        <input id="pPrice" type="number" placeholder="Selling price (₦)" min="0" required />
-        <input id="pCost" type="number" placeholder="Original cost (₦)" min="0" />
-        <input id="pStock" type="number" placeholder="Stock quantity (0 = out of stock)" min="0" />
-        <select id="pCollection"><option value="">Select collection (optional)</option></select>
-        <textarea id="pDesc" rows="3" placeholder="Description (multi-line allowed)"></textarea>
+      <div class="card">
+        <h3>Announcement</h3>
+        <textarea id="announcementInput" placeholder="Type store announcement..."></textarea>
+        <button id="saveAnnouncement" class="btn primary">Save Announcement</button>
       </div>
+    </section>
 
-      <div class="options-builder">
-        <div>
-          <label class="lbl">Colors</label>
-          <div class="add-row">
-            <input id="colorInput" type="text" placeholder="e.g. Red" />
-            <button type="button" id="addColor" class="btn small">Add</button>
-          </div>
-          <div id="colorList" class="chip-list"></div>
+    <!-- PRODUCTS -->
+    <section id="tab-products" class="tab">
+      <div class="split">
+        <div class="card">
+          <h3>Add / Edit Product</h3>
+          <form id="productForm">
+            <input name="id" type="hidden" />
+            <input required name="name" placeholder="Product name" />
+            <input required name="price" type="number" min="0" placeholder="Selling price (₦)" />
+            <input required name="originalCost" type="number" min="0" placeholder="Original cost (admin only)" />
+            <textarea name="description" placeholder="Description"></textarea>
+            <input required name="stock" type="number" min="0" placeholder="Stock quantity" />
+            <input name="collection" placeholder="Collection (e.g., Dresses)" />
+
+            <div class="tag-inputs">
+              <label>Colors</label>
+              <div class="row">
+                <input id="colorInput" placeholder="Add color" />
+                <button type="button" id="addColor" class="btn">Add</button>
+              </div>
+              <div id="colorTags" class="tags"></div>
+            </div>
+
+            <div class="tag-inputs">
+              <label>Sizes</label>
+              <div class="row">
+                <input id="sizeInput" placeholder="Add size (S, M, L, XL…)" />
+                <button type="button" id="addSize" class="btn">Add</button>
+              </div>
+              <div id="sizeTags" class="tags"></div>
+            </div>
+
+            <div class="uploader">
+              <label>Images (choose from Camera / Photo Library / Files)</label>
+              <input id="productImages" type="file" accept="image/*" multiple />
+              <div id="uploadPreview" class="thumbs"></div>
+            </div>
+
+            <button class="btn primary" type="submit">Save Product</button>
+            <button class="btn" type="button" id="resetProductForm">Reset</button>
+          </form>
         </div>
-        <div>
-          <label class="lbl">Sizes</label>
-          <div class="add-row">
-            <input id="sizeInput" type="text" placeholder="e.g. M" />
-            <button type="button" id="addSize" class="btn small">Add</button>
-          </div>
-          <div id="sizeList" class="chip-list"></div>
+
+        <div class="card">
+          <h3>Products</h3>
+          <div id="productsList" class="list"></div>
         </div>
       </div>
+    </section>
 
-      <label class="lbl">Product images (you can select multiple)</label>
-      <input id="pImages" type="file" accept="image/*" multiple />
-
-      <div class="form-actions">
-        <button class="btn primary" type="submit">Save product</button>
-        <button class="btn" type="button" id="cancelProduct">Cancel</button>
+    <!-- ORDERS -->
+    <section id="tab-orders" class="tab">
+      <div class="card">
+        <h3>Orders</h3>
+        <div id="ordersList" class="list"></div>
       </div>
-      <input type="hidden" id="editId" />
-    </form>
+    </section>
 
-    <div id="productsList" class="cards-list"></div>
-  </section>
-
-  <!-- Collections Manager -->
-  <section class="panel">
-    <div class="panel-head">
-      <h2>Collections</h2>
-      <div class="panel-actions">
-        <input id="newCollectionName" type="text" placeholder="New collection name" />
-        <button id="addCollection" class="btn small">Add</button>
-      </div>
-    </div>
-
-    <div id="collectionsList" class="pill-list"></div>
-
-    <div class="assign-wrap">
-      <h3>Assign products to a collection</h3>
-      <div class="grid-2">
-        <select id="assignCollectionSelect"></select>
-        <button id="applyAssignment" class="btn small">Assign selected</button>
-      </div>
-      <div id="assignProducts" class="assign-products"></div>
-    </div>
-  </section>
-
-  <!-- Settings overlay -->
-  <div id="settingsOverlay" class="overlay hidden"></div>
-
-  <!-- Slide-in Settings (gear) -->
-  <aside id="settingsPanel" class="settings-panel">
-    <div class="settings-head">
-      <h3>Settings</h3>
-      <button id="closeSettings" class="close-x">×</button>
-    </div>
-
-    <div class="settings-section">
-      <h4>Store Info</h4>
-      <input id="setStoreName" type="text" placeholder="Store name" />
-      <textarea id="setAnnouncement" rows="2" placeholder="Announcement text"></textarea>
-
-      <label class="lbl">Announcement background</label>
-      <input id="setAnnBg" type="color" />
-      <label class="lbl">Announcement text color</label>
-      <input id="setAnnText" type="color" />
-    </div>
-
-    <div class="settings-section">
-      <h4>Customization (applies live)</h4>
-      <label class="lbl">Background</label>
-      <input id="setBg" type="color" />
-      <label class="lbl">Button color</label>
-      <input id="setBtnBg" type="color" />
-      <label class="lbl">Button text color</label>
-      <input id="setBtnText" type="color" />
-    </div>
-
-    <div class="settings-section">
-      <h4>Contact & Messaging</h4>
-      <input id="setAdminEmail" type="email" placeholder="Admin email for orders" />
-      <input id="setStoreEmail" type="email" placeholder="Store email (contact form)" />
-      <input id="setWhatsapp" type="tel" placeholder="WhatsApp number (e.g. 2348012345678)" />
-    </div>
-
-    <div class="settings-section">
-      <h4>Bank Details (shown to customers)</h4>
-      <input id="setBankName" type="text" placeholder="Bank name" />
-      <input id="setAccountName" type="text" placeholder="Account name" />
-      <input id="setAccountNumber" type="text" placeholder="Account number" />
-    </div>
-
-    <div class="settings-section">
-      <h4>Delivery & Shipping</h4>
-      <div class="grid-2">
-        <input id="setOutsideFee" type="number" min="0" placeholder="Outside Lagos fee (₦)" />
-        <input id="setPickupNote" type="text" placeholder="Pickup note (optional)" />
-      </div>
-      <div class="zone-builder">
-        <div class="add-row">
-          <input id="zoneName" type="text" placeholder="Lagos zone name (e.g. Mainland)" />
-          <input id="zoneFee" type="number" min="0" placeholder="Fee (₦)" />
-          <button id="addZone" class="btn small" type="button">Add zone</button>
+    <!-- SETTINGS -->
+    <section id="tab-settings" class="tab">
+      <div class="split">
+        <div class="card">
+          <h3>Store Profile</h3>
+          <form id="storeProfileForm">
+            <input name="storeName" placeholder="Store name" />
+            <input name="tagline" placeholder="Tagline" />
+            <input name="contactEmail" type="email" placeholder="Contact email" />
+            <input name="contactPhone" placeholder="Contact phone" />
+            <input name="whatsapp" placeholder="WhatsApp number (e.g., 23480...)" />
+            <label>Logo</label>
+            <input id="logoUpload" type="file" accept="image/*" />
+            <button class="btn" type="submit">Save Profile</button>
+          </form>
         </div>
-        <div id="zoneList" class="chip-list"></div>
+
+        <div class="card">
+          <h3>Theme (Live)</h3>
+          <form id="themeForm">
+            <label>Background</label><input type="color" name="bg" />
+            <label>Text</label><input type="color" name="text" />
+            <label>Button</label><input type="color" name="button" />
+            <label>Button Text</label><input type="color" name="buttonText" />
+            <button class="btn" type="submit">Save Theme</button>
+          </form>
+        </div>
       </div>
-    </div>
 
-    <div class="settings-actions">
-      <button id="saveSettings" class="btn primary">Save settings</button>
-    </div>
-  </aside>
+      <div class="split">
+        <div class="card">
+          <h3>Shipping Zones & Fees</h3>
+          <form id="zoneForm" class="row">
+            <input id="zoneName" placeholder="Zone name (e.g., Lagos Island)" />
+            <input id="zoneFee" type="number" min="0" placeholder="Fee (₦)" />
+            <button type="button" id="addZone" class="btn">Add</button>
+          </form>
+          <div id="zonesList" class="tags"></div>
+        </div>
 
-  <script src="script.js"></script>
-  <script>
-    (function(){ emailjs.init('RN5H1CcY7Fqkakg5w'); })();
-  </script>
+        <div class="card">
+          <h3>Shipping Notes</h3>
+          <form id="shippingNotesForm">
+            <label>Standard</label><textarea name="standard" placeholder="Note under Standard"></textarea>
+            <label>Express</label><textarea name="express" placeholder="Note under Express"></textarea>
+            <label>Pickup</label><textarea name="pickup" placeholder="Note under Pickup"></textarea>
+            <label>Address not listed</label><textarea name="address_not_listed" placeholder="Note under Address not listed"></textarea>
+            <label>Stockpile</label><textarea name="stockpile" placeholder="Note under Stockpile"></textarea>
+            <button class="btn" type="submit">Save Notes</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Bank Details (Shown to customers at Checkout)</h3>
+        <form id="bankForm">
+          <input name="accountName" placeholder="Account name" />
+          <input name="accountNumber" placeholder="Account number" />
+          <input name="bankName" placeholder="Bank name" />
+          <button class="btn" type="submit">Save Bank Details</button>
+        </form>
+      </div>
+    </section>
+  </main>
 </body>
 </html>
