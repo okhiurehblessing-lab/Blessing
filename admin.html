@@ -3,59 +3,71 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Essysessentials – Admin</title>
+  <title>Essysessentials — Admin</title>
   <link rel="stylesheet" href="styles.css" />
   <script defer type="module" src="script.js"></script>
 </head>
 <body data-page="admin">
   <header class="admin-header">
     <div class="brand">
-      <img id="adminLogo" class="logo" alt="logo" src="assets/logo.jpg" />
-      <h1>Admin Panel</h1>
+      <img id="adminLogo" class="logo small" src="assets/logo.jpg" alt="logo" />
+      <div>
+        <div class="muted">Essysessentials</div>
+        <h1 class="admin-title">Admin</h1>
+      </div>
     </div>
-    <nav class="tabs">
-      <button class="tab-btn" data-tab="dashboard" aria-selected="true">Dashboard</button>
-      <button class="tab-btn" data-tab="products">Products</button>
-      <button class="tab-btn" data-tab="orders">Orders</button>
-      <button class="tab-btn" data-tab="settings">Settings</button>
-    </nav>
+    <div class="right-actions">
+      <button id="logoutBtn" class="btn subtle">Logout</button>
+    </div>
   </header>
 
-  <main class="container">
+  <div class="admin-shell">
+    <aside class="sidebar">
+      <nav>
+        <button class="side-btn active" data-page="dashboard">Dashboard</button>
+        <button class="side-btn" data-page="products">Products</button>
+        <button class="side-btn" data-page="orders">Orders</button>
+        <button class="side-btn" data-page="customers">Customers</button>
+        <button class="side-btn" data-page="settings" title="Settings ⚙️">⚙️</button>
+      </nav>
+    </aside>
 
-    <!-- DASHBOARD -->
-    <section id="tab-dashboard" class="tab active">
-      <div class="stats">
-        <div class="card"><h3 id="statProducts">0</h3><p>Products</p></div>
-        <div class="card"><h3 id="statOrders">0</h3><p>Orders</p></div>
-        <div class="card"><h3 id="statPending">0</h3><p>Pending</p></div>
-        <div class="card"><h3 id="statProfit">₦0</h3><p>Estimated Profit</p></div>
-      </div>
-      <div class="card">
-        <h3>Announcement</h3>
-        <textarea id="announcementInput" placeholder="Type store announcement..."></textarea>
-        <button id="saveAnnouncement" class="btn primary">Save Announcement</button>
-      </div>
-    </section>
+    <main class="admin-main">
+      <!-- Dashboard -->
+      <section id="dashboard" class="admin-tab active">
+        <div class="stats">
+          <div class="card"><h3 id="statProducts">0</h3><p>Products</p></div>
+          <div class="card"><h3 id="statOrders">0</h3><p>Orders</p></div>
+          <div class="card"><h3 id="statPending">0</h3><p>Pending</p></div>
+          <div class="card"><h3 id="statProfit">₦0</h3><p>Estimated Profit</p></div>
+        </div>
 
-    <!-- PRODUCTS -->
-    <section id="tab-products" class="tab">
-      <div class="split">
+        <div class="card">
+          <h3>Announcement</h3>
+          <textarea id="announcementInput" placeholder="Type announcement..."></textarea>
+          <div class="row" style="margin-top:8px">
+            <button id="saveAnnouncement" class="btn primary">Save</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Products -->
+      <section id="products" class="admin-tab">
         <div class="card">
           <h3>Add / Edit Product</h3>
           <form id="productForm">
             <input name="id" type="hidden" />
             <input required name="name" placeholder="Product name" />
-            <input required name="price" type="number" min="0" placeholder="Selling price (₦)" />
+            <input required name="price" type="number" min="0" placeholder="Price (₦)" />
             <input required name="originalCost" type="number" min="0" placeholder="Original cost (admin only)" />
             <textarea name="description" placeholder="Description"></textarea>
             <input required name="stock" type="number" min="0" placeholder="Stock quantity" />
-            <input name="collection" placeholder="Collection (e.g., Dresses)" />
+            <input name="collection" placeholder="Collection (Category)" />
 
             <div class="tag-inputs">
               <label>Colors</label>
               <div class="row">
-                <input id="colorInput" placeholder="Add color" />
+                <input id="colorInput" placeholder="Type color then Add" />
                 <button type="button" id="addColor" class="btn">Add</button>
               </div>
               <div id="colorTags" class="tags"></div>
@@ -64,41 +76,49 @@
             <div class="tag-inputs">
               <label>Sizes</label>
               <div class="row">
-                <input id="sizeInput" placeholder="Add size (S, M, L, XL…)" />
+                <input id="sizeInput" placeholder="Type size then Add" />
                 <button type="button" id="addSize" class="btn">Add</button>
               </div>
               <div id="sizeTags" class="tags"></div>
             </div>
 
-            <div class="uploader">
-              <label>Images (choose from Camera / Photo Library / Files)</label>
+            <div>
+              <label>Images (camera / photo library / files)</label>
               <input id="productImages" type="file" accept="image/*" multiple />
               <div id="uploadPreview" class="thumbs"></div>
             </div>
 
-            <button class="btn primary" type="submit">Save Product</button>
-            <button class="btn" type="button" id="resetProductForm">Reset</button>
+            <div class="row" style="margin-top:8px">
+              <button class="btn primary" type="submit">Save Product</button>
+              <button id="resetProductForm" class="btn" type="button">Reset</button>
+            </div>
           </form>
         </div>
 
         <div class="card">
-          <h3>Products</h3>
+          <h3>Products list</h3>
           <div id="productsList" class="list"></div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- ORDERS -->
-    <section id="tab-orders" class="tab">
-      <div class="card">
-        <h3>Orders</h3>
-        <div id="ordersList" class="list"></div>
-      </div>
-    </section>
+      <!-- Orders -->
+      <section id="orders" class="admin-tab">
+        <div class="card">
+          <h3>Orders</h3>
+          <div id="ordersList" class="list"></div>
+        </div>
+      </section>
 
-    <!-- SETTINGS -->
-    <section id="tab-settings" class="tab">
-      <div class="split">
+      <!-- Customers -->
+      <section id="customers" class="admin-tab">
+        <div class="card">
+          <h3>Customers</h3>
+          <div id="customersList" class="list"></div>
+        </div>
+      </section>
+
+      <!-- Settings -->
+      <section id="settings" class="admin-tab">
         <div class="card">
           <h3>Store Profile</h3>
           <form id="storeProfileForm">
@@ -106,59 +126,54 @@
             <input name="tagline" placeholder="Tagline" />
             <input name="contactEmail" type="email" placeholder="Contact email" />
             <input name="contactPhone" placeholder="Contact phone" />
-            <input name="whatsapp" placeholder="WhatsApp number (e.g., 23480...)" />
+            <input name="whatsapp" placeholder="WhatsApp number (234...)" />
             <label>Logo</label>
             <input id="logoUpload" type="file" accept="image/*" />
-            <button class="btn" type="submit">Save Profile</button>
+            <div class="row" style="margin-top:8px">
+              <button class="btn" type="submit">Save profile</button>
+            </div>
           </form>
         </div>
 
         <div class="card">
-          <h3>Theme (Live)</h3>
+          <h3>Theme (live)</h3>
           <form id="themeForm">
             <label>Background</label><input type="color" name="bg" />
             <label>Text</label><input type="color" name="text" />
             <label>Button</label><input type="color" name="button" />
             <label>Button Text</label><input type="color" name="buttonText" />
-            <button class="btn" type="submit">Save Theme</button>
+            <div class="row" style="margin-top:8px">
+              <button class="btn" type="submit">Save theme</button>
+            </div>
           </form>
-        </div>
-      </div>
-
-      <div class="split">
-        <div class="card">
-          <h3>Shipping Zones & Fees</h3>
-          <form id="zoneForm" class="row">
-            <input id="zoneName" placeholder="Zone name (e.g., Lagos Island)" />
-            <input id="zoneFee" type="number" min="0" placeholder="Fee (₦)" />
-            <button type="button" id="addZone" class="btn">Add</button>
-          </form>
-          <div id="zonesList" class="tags"></div>
         </div>
 
         <div class="card">
-          <h3>Shipping Notes</h3>
-          <form id="shippingNotesForm">
-            <label>Standard</label><textarea name="standard" placeholder="Note under Standard"></textarea>
-            <label>Express</label><textarea name="express" placeholder="Note under Express"></textarea>
-            <label>Pickup</label><textarea name="pickup" placeholder="Note under Pickup"></textarea>
-            <label>Address not listed</label><textarea name="address_not_listed" placeholder="Note under Address not listed"></textarea>
-            <label>Stockpile</label><textarea name="stockpile" placeholder="Note under Stockpile"></textarea>
-            <button class="btn" type="submit">Save Notes</button>
+          <h3>Shipping blocks (editable rectangles)</h3>
+          <form id="shippingBlockForm">
+            <input id="shipTitle" placeholder="Title (e.g., Outside Lagos)" />
+            <textarea id="shipDesc" placeholder="Write shipping details, fees, conditions..."></textarea>
+            <div class="row" style="margin-top:8px">
+              <button id="addShipBlock" class="btn">Add block</button>
+            </div>
+          </form>
+          <div id="shippingBlocksList" class="tags" style="margin-top:8px"></div>
+        </div>
+
+        <div class="card">
+          <h3>Bank details</h3>
+          <form id="bankForm">
+            <input name="accountName" placeholder="Account name" />
+            <input name="accountNumber" placeholder="Account number" />
+            <input name="bankName" placeholder="Bank name" />
+            <div class="row" style="margin-top:8px">
+              <button class="btn" type="submit">Save bank</button>
+            </div>
           </form>
         </div>
-      </div>
+      </section>
 
-      <div class="card">
-        <h3>Bank Details (Shown to customers at Checkout)</h3>
-        <form id="bankForm">
-          <input name="accountName" placeholder="Account name" />
-          <input name="accountNumber" placeholder="Account number" />
-          <input name="bankName" placeholder="Bank name" />
-          <button class="btn" type="submit">Save Bank Details</button>
-        </form>
-      </div>
-    </section>
-  </main>
+    </main>
+  </div>
 </body>
 </html>
